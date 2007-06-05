@@ -205,7 +205,7 @@ cmd="${MAKEINFO} --no-split --html -o $PACKAGE.html $html $srcfile"
 echo "Generating monolithic html... ($cmd)"
 rm -rf $PACKAGE.html  # in case a directory is left over
 eval $cmd
-sbcl --load colorize-lisp-examples.lisp $PACKAGE.html
+#sbcl --load colorize-lisp-examples.lisp $PACKAGE.html
 #fix libc/libtool xrefs
 sed -e `monognuorg libc` -e `monognuorg libtool` $PACKAGE.html >$outdir/$PACKAGE.html
 rm $PACKAGE.html
@@ -217,7 +217,7 @@ cmd="${MAKEINFO} --html -o $PACKAGE.html $html $srcfile"
 echo "Generating html by node... ($cmd)"
 eval $cmd
 split_html_dir=$PACKAGE.html
-sbcl --load colorize-lisp-examples.lisp "${split_html_dir}/*.html"
+#sbcl --load colorize-lisp-examples.lisp "${split_html_dir}/*.html"
 (
   cd ${split_html_dir} || exit 1
   #fix libc xrefs
