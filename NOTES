@@ -5,7 +5,7 @@ LIST OF IDEAS AND TODO ITEMS FOR BABEL
       - test invalid sequences.
       - use more interesting test files.
 
-  * Implement more encodings. (ISO-8859-*, windows, CJK encodings,
+  * Implement more encodings. (ISO-8859-*, windows, CJK encodings, etc)
 
   * null-termination, bom-markers.  Add to string-to-octets.
 
@@ -19,4 +19,6 @@ LIST OF IDEAS AND TODO ITEMS FOR BABEL
 
   * Should we start adding a lot of encodings, a load-on-demand scheme
     might come in handy.
+
+  * Make the test suite reusable, very much like mappings are reusable.
 
