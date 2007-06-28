@@ -225,7 +225,7 @@ denoting a character encoding name or alias."
 (defconstant +sub+ #x1a "ASCII substitution character code point.")
 
 ;;; We're converting between objects of the (UNSIGNED-BYTE 8) and
-;;; (MOD #x110000) types which are here aliased to UB8 and CODE-POINT
+;;; (MOD #x110000) types which are aliased here to UB8 and CODE-POINT
 ;;; for convenience.
 (deftype ub8 () '(unsigned-byte 8))
 (deftype code-point () '(mod #x110000))
@@ -325,7 +325,7 @@ denoting a character encoding name or alias."
 ;;;
 ;;; In any case, this is not for the users to bind and it's not
 ;;; exported from the BABEL package.
-(defvar *suppress-character-coding-errors* t
+(defvar *suppress-character-coding-errors* nil
   "If non-NIL, encoding or decoding errors are suppressed and the
 the current character encoding's default replacement character is
 used.")

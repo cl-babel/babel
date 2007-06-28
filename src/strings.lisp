@@ -26,17 +26,28 @@
 
 (in-package #:babel)
 
+;;; The usefulness of this string/octets interface of Babel's is very
+;;; limited on Lisps with 8-bit characters which will in effect only
+;;; support the latin-1 subset of Unicode.  That is, all encodings are
+;;; supported but we can only store the first 256 code points in Lisp
+;;; strings.  Support for using other 8-bit encodings for strings on
+;;; these Lisps could be added with an extra encoding/decoding step.
+;;; Supporting other encodings with larger code units would be silly
+;;; (it would break expectations about common string operations) and
+;;; better done with something like Closure's runes.
+
 ;;; Can we handle unicode fully?
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (when (< char-code-limit #x110000)
-    (pushnew 'small-char-code-limit *features*))
-  (when (> char-code-limit #x110000)
-    (error "Hmm, (> char-code-limit #x110000) we weren't expecting that. ~
-            Bad things would happen if we tried to continue.")))
-
-;;; What's the right thing to do here?
-#+babel::small-char-code-limit
-(error "we don't properly support Lisps with small CHAR-CODE-LIMITs, yet")
+  ;; The EVAL is just here to avoid warnings...
+  (case (eval char-code-limit)
+    (#x100 (pushnew '8-bit-chars *features*))
+    (#x10000 (pushnew 'ucs-2-chars *features*))
+    (#x110000 #| yay |#)
+    ;; This is here mostly because if the CHAR-CODE-LIMIT is bigger
+    ;; than #x11000, strange things might happen but we probably
+    ;; shouldn't descriminate against other, smaller, values.
+    (t (error "Strange CHAR-CODE-LIMIT (#x~X), bailing out."
+              char-code-limit))))
 
 (defvar *default-character-encoding* :utf-8
   "Special variable used to determine the default character
