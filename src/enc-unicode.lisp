@@ -53,21 +53,24 @@ in 2 to 4 bytes."
   :default-replacement #xfffd)
 
 (define-octet-counter :utf-8 (accessor type)
-  `(lambda (seq start end)
-     (declare (type ,type seq) (fixnum start end))
-     (loop with noctets = 0
+  `(lambda (seq start end max)
+     (declare (type ,type seq) (fixnum start end max))
+     (loop with noctets fixnum = 0
            for i fixnum from start below end
            for code of-type code-point = (,accessor seq i) do
-           (incf noctets
-                 (cond ((< code #x80) 1)
-                       ((< code #x800) 2)
-                       ((< code #x10000) 3)
-                       (t 4)))
-           finally (return noctets))))
+           (let ((new (+ (cond ((< code #x80) 1)
+                               ((< code #x800) 2)
+                               ((< code #x10000) 3)
+                               (t 4))
+                         noctets)))
+             (if (and (plusp max) (> new max))
+                 (loop-finish)
+                 (setq noctets new)))
+           finally (return (values noctets i)))))
 
 (define-code-point-counter :utf-8 (accessor type)
-  `(lambda (seq start end)
-     (declare (type ,type seq) (fixnum start end))
+  `(lambda (seq start end max)
+     (declare (type ,type seq) (fixnum start end max))
      (loop with nchars fixnum = 0
            with i fixnum = start
            while (< i end)
@@ -76,16 +79,19 @@ in 2 to 4 bytes."
                                           ((< octet #xe0) 2)
                                           ((< octet #xf0) 3)
                                           (t 4)))
-           do (if (> next-i end)
-                  (progn
-                    ;; So, if this error is suppressed, we return the
-                    ;; length calculated so far and the decoder won't
-                    ;; see an END-OF-INPUT-IN-CHARACTER error.
-                    (decoding-error (vector octet) :utf-8 seq i
-                                    nil 'end-of-input-in-character)
-                    (return (values nchars i)))
-                  (setq nchars (1+ nchars)
-                        i next-i))
+           do (cond
+                ((> next-i end)
+                 ;; If this error is suppressed, we return the length
+                 ;; calculated so far and the decoder won't see an
+                 ;; END-OF-INPUT-IN-CHARACTER error.
+                 (decoding-error (vector octet) :utf-8 seq i
+                                 nil 'end-of-input-in-character)
+                 (return (values nchars i)))
+                (t
+                 (setq nchars (1+ nchars)
+                       i next-i)
+                 (when (and (plusp max) (= nchars max))
+                   (return (values nchars i)))))
            finally (progn
                      (assert (= i end))
                      (return (values nchars i))))))
@@ -192,13 +198,16 @@ in 2 to 4 bytes."
 ;;; for example, the maximum code-point will always be < #x10000 in
 ;;; which case we could simply return (* 2 (- end start)).
 (defmacro utf16-octet-counter (accessor type)
-  `(lambda (seq start end)
-     (declare (type ,type seq) (fixnum start end))
-     (loop with noctets = 0
+  `(lambda (seq start end max)
+     (declare (type ,type seq) (fixnum start end max))
+     (loop with noctets fixnum = 0
            for i fixnum from start below end
            for code of-type code-point = (,accessor seq i)
-           do (incf noctets (if (< code #x10000) 2 4))
-           finally (return (values noctets end)))))
+           do (let ((new (the fixnum (+ (if (< code #x10000) 2 4) noctets))))
+                (if (and (plusp max) (> new max))
+                    (loop-finish)
+                    (setq noctets new)))
+           finally (return (values noctets i)))))
 
 (defmacro utf-16-combine-surrogate-pairs (u1 u2)
   `(the (unsigned-byte 21)
@@ -232,8 +241,8 @@ written in native byte-order with a leading byte-order mark."
   `(utf16-octet-counter ,accessor ,type))
 
 (define-code-point-counter :utf-16 (accessor type)
-  `(lambda (seq start end)
-     (declare (type ,type seq) (fixnum start end))
+  `(lambda (seq start end max)
+     (declare (type ,type seq) (fixnum start end max))
      (let* ((swap (when (> end start)
                     (case (,accessor seq start 2)
                       (#.+byte-order-mark-code+ (incf start 2) nil)
@@ -249,14 +258,17 @@ written in native byte-order with a leading byte-order mark."
                                      2
                                      4))))
                (declare (type (unsigned-byte 16) code) (fixnum next-i))
-               (if (> next-i end)
-                   (progn
-                     (decoding-error
-                      (vector (,accessor seq i) (,accessor seq (1+ i)))
-                      :utf-16 seq i nil 'end-of-input-in-character)
-                     (return (values count i)))
-                   (setq i next-i
-                         count (1+ count))))
+               (cond
+                 ((> next-i end)
+                  (decoding-error
+                   (vector (,accessor seq i) (,accessor seq (1+ i)))
+                   :utf-16 seq i nil 'end-of-input-in-character)
+                  (return (values count i)))
+                 (t
+                  (setq i next-i
+                        count (1+ count))
+                  (when (and (plusp max) (= count max))
+                    (return (values count i))))))
              finally (progn
                        (assert (= i end))
                        (return (values count i)))))))
@@ -327,12 +339,15 @@ written in native byte-order with a leading byte-order mark."
 
 (defmacro utf32-octet-counter (accessor type)
   (declare (ignore accessor type))
-  `(lambda (seq start end)
-     (declare (ignore seq))
+  `(lambda (seq start end max)
+     (declare  (ignore seq) (fixnum start end max))
      ;; XXX: the result can be bigger than a fixnum and we don't want
      ;; that to happen.  Possible solution: signal a warning (hmm,
      ;; make that an actual error) and truncate.
-     (* 4 (the fixnum (- end start)))))
+     (if (plusp max)
+         (let ((count (the fixnum (min (floor max 4) (- end start)))))
+           (values (the fixnum (* 4 count)) (the fixnum (+ start count))))
+         (values (the fixnum (* 4 (the fixnum (- end start)))) end))))
 
 (define-character-encoding :utf-32
    "A 32-bit, fixed-length encoding in which all Unicode
@@ -356,25 +371,29 @@ order with a leading byte-order mark."
   `(utf32-octet-counter ,accessor ,type))
 
 (define-code-point-counter :utf-32 (accessor type)
-  `(lambda (seq start end)
-     (declare (type ,type seq) (fixnum start end))
+  `(lambda (seq start end max)
+     (declare (type ,type seq) (fixnum start end max))
+     ;; check for bom
+     (when (and (/= start end)
+                (case (,accessor seq 0 4)
+                  ((#.+byte-order-mark-code+
+                    #.+swapped-byte-order-mark-code-32+) t)))
+       (incf start))
      (multiple-value-bind (count rem)
          (floor (- end start) 4)
-       ;; check for incomplete last character
-       (unless (zerop rem)
-         (let ((vector (make-array 4 :fill-pointer 0)))
-           (dotimes (i rem)
-             (vector-push (,accessor seq (+ i (- end rem))) vector))
-           (decoding-error vector :utf-32 seq (- end rem) nil
-                           'end-of-input-in-character)
-           (decf end rem)))
-       ;; check for bom
-       (when (and (not (zerop count))
-                  (case (,accessor seq 0 4)
-                    ((#.+byte-order-mark-code+
-                      #.+swapped-byte-order-mark-code-32+) t)))
-         (decf count))
-       (values count end))))
+       (cond
+         ((and (plusp max) (> count max))
+          (values max (the fixnum (+ start (* 4 max)))))
+         (t
+          ;; check for incomplete last character
+          (unless (zerop rem)
+            (let ((vector (make-array 4 :fill-pointer 0)))
+              (dotimes (i rem)
+                (vector-push (,accessor seq (+ i (- end rem))) vector))
+              (decoding-error vector :utf-32 seq (the fixnum (- end rem)) nil
+                              'end-of-input-in-character)
+              (decf end rem)))
+          (values count end))))))
 
 (define-encoder :utf-32 (src-accessor src-type dest-accessor dest-type)
   `(lambda (src start end dest d-start)
@@ -397,7 +416,7 @@ order with a leading byte-order mark."
                   ((#.+byte-order-mark-code+
                     #.+swapped-byte-order-mark-code-32+) t)))
        (incf start 4))
-     (loop for i from start below end by 4
+     (loop for i fixnum from start below end by 4
            for di from d-start do
            (setf (,dest-accessor dest di)
                  (,src-accessor src i 4))

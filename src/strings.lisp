@@ -165,7 +165,7 @@ shouldn't attempt to modify V."
     (let ((*suppress-character-coding-errors* (not errorp))
           (mapping (lookup-mapping *string-vector-mappings* encoding)))
       (multiple-value-bind (size new-end)
-          (funcall (code-point-counter mapping) vector start end)
+          (funcall (code-point-counter mapping) vector start end -1)
         (let ((string (make-string size)))
           (funcall (decoder mapping) vector start new-end string 0)
           string)))))
@@ -179,25 +179,27 @@ shouldn't attempt to modify V."
     (let* ((*suppress-character-coding-errors* (not errorp))
            (mapping (lookup-mapping *string-vector-mappings* encoding))
            (vector (make-array (funcall (octet-counter mapping)
-                                        string start end)
+                                        string start end -1)
                                :element-type '(unsigned-byte 8))))
       (funcall (encoder mapping) string start end vector 0)
       vector)))
 
-(defun string-size-in-octets (string &key (start 0) end errorp
+(defun string-size-in-octets (string &key (start 0) end (max -1 maxp) errorp
                               (encoding *default-character-encoding*))
   (check-type string string)
   (with-checked-simple-vector ((string string) (start start) (end end))
     (declare (type simple-string string))
     (let ((mapping (lookup-mapping *string-vector-mappings* encoding))
           (*suppress-character-coding-errors* (not errorp)))
-      (funcall (octet-counter mapping) string start end))))
+      (when maxp (assert (plusp max)))
+      (funcall (octet-counter mapping) string start end max))))
 
-(defun vector-size-in-chars (vector &key (start 0) end errorp
+(defun vector-size-in-chars (vector &key (start 0) end (max -1 maxp) errorp
                              (encoding *default-character-encoding*))
   (check-type vector (vector (unsigned-byte 8)))
   (with-checked-simple-vector ((vector vector) (start start) (end end))
     (declare (type (simple-array (unsigned-byte 8) (*)) vector))
     (let ((mapping (lookup-mapping *string-vector-mappings* encoding))
           (*suppress-character-coding-errors* (not errorp)))
-      (funcall (code-point-counter mapping) vector start end))))
+      (when maxp (assert (plusp max)))
+      (funcall (code-point-counter mapping) vector start end max))))

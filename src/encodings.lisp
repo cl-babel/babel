@@ -107,9 +107,12 @@ NAME.  Signals an error if one is not found."
 
 (defun 8-bit-fixed-width-counter (accessor type)
   (declare (ignore accessor type))
-  `(lambda (seq start end)
-     (declare (ignore seq) (fixnum start end))
-     (values (the fixnum (- end start)) end)))
+  `(lambda (seq start end max)
+     (declare (ignore seq) (fixnum start end max))
+     (if (plusp max)
+         (let ((count (the fixnum (min max (the fixnum (- end start))))))
+           (values count (the fixnum (+ start count))))
+         (values (the fixnum (- end start)) end))))
 
 ;;; Useful to develop new encodings incrementally starting with octet
 ;;; and code-unit counters.
@@ -141,8 +144,9 @@ NAME.  Signals an error if one is not found."
 ;;; ENCODER -- (lambda (src start end dest d-start) ...)
 ;;; DECODER -- (lambda (src start end dest d-start) ...)
 ;;;
-;;; OCTET-COUNTER -- ((seq start end) ...)
-;;; CODE-POINT-COUNTER -- (lambda (seq start end) ...) => N-CHARS NEW-END
+;;; OCTET-COUNTER -- (lambda (seq start end max-octets) ...)
+;;; CODE-POINT-COUNTER -- (lambda (seq start end max-chars) ...)
+;;;                        => N-CHARS NEW-END
 ;;;   (important: describe NEW-END)
 (defclass concrete-mapping (mapping) ())
 
