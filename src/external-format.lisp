@@ -1,6 +1,6 @@
 ;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; babel.asd --- ASDF system definition for Babel.
+;;; external-format.lisp --- External format classes and functions.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
@@ -24,31 +24,31 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(defpackage #:babel-system
-  (:use #:cl #:asdf))
-(in-package #:babel-system)
+(in-package #:babel)
 
-(defsystem babel
-  :description "Babel, a charset conversion library."
-  :author "Luis Oliveira <loliveira@common-lisp.net>"
-  :version "0.1.0"
-  :licence "MIT"
-  :components
-  ((:module src
-    :serial t
-    :components
-    ((:file "packages")
-     (:file "utils")
-     (:file "encodings")
-     (:file "enc-ascii")
-     (:file "enc-ebcdic")
-     (:file "enc-iso-8859")
-     (:file "enc-unicode")
-     (:file "strings")
-     (:file "external-format")))))
+(defvar *default-eol-style*
+  #+(or win32 mswindows) :crlf
+  #-(or win32 mswindows) :lf
+  "The end-of-line style used by external formats if none is
+explicitly given.  Depends on the OS the code is compiled on.")
 
-(defmethod perform ((o test-op) (c (eql (find-system :babel))))
-  (operate 'asdf:load-op :babel-tests)
-  (operate 'asdf:test-op :babel-tests))
+(defclass external-format ()
+  ((encoding :initarg :encoding :reader external-format-encoding)
+   ;; one of :CR, :LF or :CRLF
+   (eol-style :initarg :eol-style :reader external-format-eol-style))
+  (:documentation
+   "An EXTERNAL-FORMAT consists in a combination of a Babel
+CHARACTER-ENCODING and an end-of-line style."))
 
-;;; vim: ft=lisp et
+;;; This interface is still somewhat sketchy.  The rest of Babel
+;;; doesn't really understand external formats, for instance.
+(defun make-external-format (encoding &optional (eol-style *default-eol-style*))
+  (make-instance 'external-format
+                 :encoding (get-character-encoding encoding)
+                 :eol-style eol-style))
+
+(defmethod print-object ((ef external-format) stream)
+  (print-unreadable-object (ef stream :type t :identity t)
+    (format stream "~A ~A"
+            (enc-name (external-format-encoding ef))
+            (external-format-eol-style ef))))

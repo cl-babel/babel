@@ -67,6 +67,11 @@
 (defpackage #:babel
   (:use #:common-lisp #:babel-encodings)
   (:export
+   ;; external formats
+   #:make-external-format
+   #:external-format-encoding
+   #:external-format-eol-style
+   #:*default-eol-style*
    ;; general user API
    #:*default-character-encoding*
    #:list-character-encodings
