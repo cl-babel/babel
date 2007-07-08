@@ -28,10 +28,11 @@
 
 (in-package #:babel-encodings)
 
-(defconstant +repl+ #xfffd "Unicode replacement character code point.")
-(defconstant +byte-order-mark-code+ #xfeff)
-(defconstant +swapped-byte-order-mark-code+ #xfffe)
-(defconstant +swapped-byte-order-mark-code-32+ #xfffe0000)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant +repl+ #xfffd "Unicode replacement character code point.")
+  (defconstant +byte-order-mark-code+ #xfeff)
+  (defconstant +swapped-byte-order-mark-code+ #xfffe)
+  (defconstant +swapped-byte-order-mark-code-32+ #xfffe0000))
 
 ;;; Some convenience macros adding FIXNUM declarations.
 (defmacro f-ash (integer count) `(the fixnum (ash ,integer ,count)))
