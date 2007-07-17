@@ -32,6 +32,7 @@
    ;; character encoding objects
    #:list-character-encodings
    #:character-encoding
+   #:*default-character-encoding*
    #:get-character-encoding
    #:enc-name
    #:enc-aliases
@@ -69,6 +70,7 @@
   (:export
    ;; external formats
    #:make-external-format
+   #:ensure-external-format
    #:external-format-encoding
    #:external-format-eol-style
    #:*default-eol-style*

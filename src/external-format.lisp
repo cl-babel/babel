@@ -35,10 +35,17 @@ explicitly given.  Depends on the OS the code is compiled on.")
 (defclass external-format ()
   ((encoding :initarg :encoding :reader external-format-encoding)
    ;; one of :CR, :LF or :CRLF
-   (eol-style :initarg :eol-style :reader external-format-eol-style))
+   (eol-style :initarg :eol-style :reader external-format-eol-style
+              :initform *default-eol-style*))
   (:documentation
    "An EXTERNAL-FORMAT consists in a combination of a Babel
 CHARACTER-ENCODING and an end-of-line style."))
+
+(defmethod print-object ((ef external-format) stream)
+  (print-unreadable-object (ef stream :type t :identity t)
+    (format stream "~A ~A"
+            (enc-name (external-format-encoding ef))
+            (external-format-eol-style ef))))
 
 ;;; This interface is still somewhat sketchy.  The rest of Babel
 ;;; doesn't really understand external formats, for instance.
@@ -47,8 +54,8 @@ CHARACTER-ENCODING and an end-of-line style."))
                  :encoding (get-character-encoding encoding)
                  :eol-style eol-style))
 
-(defmethod print-object ((ef external-format) stream)
-  (print-unreadable-object (ef stream :type t :identity t)
-    (format stream "~A ~A"
-            (enc-name (external-format-encoding ef))
-            (external-format-eol-style ef))))
+(defun ensure-external-format (thing)
+  (etypecase thing
+    (external-format thing)
+    (character-encoding (make-instance 'external-format :encoding thing))
+    (symbol (make-external-format thing))))

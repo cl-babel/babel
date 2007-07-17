@@ -49,11 +49,6 @@
     (t (error "Strange CHAR-CODE-LIMIT (#x~X), bailing out."
               char-code-limit))))
 
-(defvar *default-character-encoding* :utf-8
-  "Special variable used to determine the default character
-encoding by STRING-TO-OCTETS, OCTETS-TO-STRING,
-STRING-SIZE-IN-OCTETS, and VECTOR-SIZE-IN-CHARS")
-
 ;;; Adapted from Ironclad.  TODO: check if it's worthwhile adding
 ;;; implementation-specific accessors such as SAP-REF-* for SBCL.
 (defmacro ub-get (vector index &optional (bytes 1) (endianness :ne))

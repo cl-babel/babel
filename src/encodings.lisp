@@ -84,9 +84,15 @@ encodings.  This list does not include aliases."
 
 (defvar *character-encodings* (make-hash-table :test 'eq))
 
+(defvar *default-character-encoding* :utf-8
+  "Special variable used to determine the default character
+encoding.")
+
 (defun get-character-encoding (name)
   "Lookups the character encoding denoted by the keyword symbol
 NAME.  Signals an error if one is not found."
+  (when (eq name :default)
+    (setq name *default-character-encoding*))
   (or (gethash name *character-encodings*)
       (error "Unknown character encoding: ~S" name)))
 
