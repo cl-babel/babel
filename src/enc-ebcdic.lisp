@@ -62,10 +62,10 @@
         (setf (aref rt code) i)
         finally (return rt)))
 
-(define-unibyte-encoder :ebcdic-us (code octet)
+(define-unibyte-encoder :ebcdic-us (code)
   (when (>= code 256)
     (setq code (handle-error)))
-  (setq octet (aref *ebcdic-encode-table* code)))
+  (set-octet (aref *ebcdic-encode-table* code)))
 
-(define-unibyte-decoder :ebcdic-us (octet code)
-  (setq code (aref *ebcdic-decode-table* octet)))
+(define-unibyte-decoder :ebcdic-us (octet)
+  (set-code (aref *ebcdic-decode-table* octet)))

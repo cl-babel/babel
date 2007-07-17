@@ -32,12 +32,12 @@ character codes map to their Unicode equivalents."
   :aliases '(:us-ascii)
   :literal-char-code-limit 128)
 
-(define-unibyte-encoder :ascii (code octet)
+(define-unibyte-encoder :ascii (code)
   (when (>= code 128)
     (setq code (handle-error)))
-  (setq octet code))
+  (set-octet code))
 
-(define-unibyte-decoder :ascii (octet code)
+(define-unibyte-decoder :ascii (octet)
   (when (>= octet 128)
     (setq octet (handle-error)))
-  (setq code octet))
+  (set-code octet))

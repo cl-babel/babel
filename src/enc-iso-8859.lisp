@@ -40,10 +40,10 @@ support most characters used in most Western European languages."
   :aliases '(:latin-1 :latin1)
   :literal-char-code-limit 256)
 
-(define-unibyte-encoder :iso-8859-1 (code octet)
+(define-unibyte-encoder :iso-8859-1 (code)
   (when (>= code 256)
     (setq code (handle-error)))
-  (setq octet code))
+  (set-octet code))
 
-(define-unibyte-decoder :iso-8859-1 (octet code)
-  (setq code octet))
+(define-unibyte-decoder :iso-8859-1 (octet)
+  (set-code octet))

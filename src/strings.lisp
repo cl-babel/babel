@@ -56,7 +56,7 @@ STRING-SIZE-IN-OCTETS, and VECTOR-SIZE-IN-CHARS")
 
 ;;; Adapted from Ironclad.  TODO: check if it's worthwhile adding
 ;;; implementation-specific accessors such as SAP-REF-* for SBCL.
-(defmacro ubref (vector index &optional (bytes 1) (endianness :ne))
+(defmacro ub-get (vector index &optional (bytes 1) (endianness :ne))
   (let ((big-endian (member endianness '(:be #+babel::be :ne))))
     (babel-encodings::once-only (vector index)
       `(logand
@@ -69,7 +69,7 @@ STRING-SIZE-IN-OCTETS, and VECTOR-SIZE-IN-CHARS")
                                  (* offset 8))
                  collect `(ash (aref ,vector (+ ,index ,offset)) ,shift)))))))
 
-(defsetf ubref (vector index &optional (bytes 1) (endianness :ne)) (value)
+(defmacro ub-set (value vector index &optional (bytes 1) (endianness :ne))
   (let ((big-endian (member endianness '(:be #+babel::be :ne #+babel::le :re))))
     `(progn
        ,@(loop for i from 1 to bytes
@@ -78,18 +78,20 @@ STRING-SIZE-IN-OCTETS, and VECTOR-SIZE-IN-CHARS")
                       (ldb (byte 8 ,(* 8 (1- i))) ,value)))
        (values))))
 
-(defmacro string-accessor (string index)
+(defmacro string-get (string index)
   `(char-code (schar ,string ,index)))
 
-(defsetf string-accessor (string index) (code)
+(defmacro string-set (code string index)
   `(setf (schar ,string ,index) (code-char ,code)))
 
 (defparameter *string-vector-mappings*
   (instantiate-concrete-mappings
    :optimize ((speed 3) (debug 0) (compilation-speed 0) (safety 0))
-   :octet-seq-accessor ubref
+   :octet-seq-setter ub-set
+   :octet-seq-getter ub-get
    :octet-seq-type (simple-array (unsigned-byte 8) (*))
-   :code-point-seq-accessor string-accessor
+   :code-point-seq-setter string-set
+   :code-point-seq-getter string-get
    :code-point-seq-type simple-string))
 
 ;;; Do we want a more a specific error condition here?
@@ -130,7 +132,7 @@ shouldn't attempt to modify V."
        ,@body))
   ;; slow, copying implementation
   #-(or sbcl cmu openmcl allegro)
-  (once-only (vector)
+  (babel-encodings::once-only (vector)
     `(let* ((,e ,end)
             (,s ,start)
             (,v (make-array (- ,e ,s)
