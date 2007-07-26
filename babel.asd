@@ -33,6 +33,7 @@
   :author "Luis Oliveira <loliveira@common-lisp.net>"
   :version "0.1.0"
   :licence "MIT"
+  :depends-on (trivial-features)
   :components
   ((:module src
     :serial t

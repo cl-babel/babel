@@ -227,12 +227,6 @@ denoting a character encoding name or alias."
 
 ;;;; Utilities used in enc-*.lisp
 
-;;; Guessing at the endianness...
-;;; XXX: investigate how this interacts with CLISP's FASL portability.
-(pushnew #+(or x86 x86-64) 'babel::le
-         #-(or x86 x86-64) 'babel::be
-         *features*)
-
 (defconstant +sub+ #x1a "ASCII substitution character code point.")
 
 ;;; We're converting between objects of the (UNSIGNED-BYTE 8) and

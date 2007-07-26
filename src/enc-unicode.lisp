@@ -235,8 +235,8 @@ written in native byte-order with a leading byte-order mark."
   :code-unit-size 16
   :native-endianness t            ; not necessarily true when decoding
   :literal-char-code-limit #x10000
-  :use-bom #+babel::be :utf-16be #+babel::le :utf-16le
-  :bom-encoding #+babel::be #(#xfe #xff) #+babel::le #(#xff #xfe)
+  :use-bom #+big-endian :utf-16be #+little-endian :utf-16le
+  :bom-encoding #+big-endian #(#xfe #xff) #+little-endian #(#xff #xfe)
   :nul-encoding #(0 0)
   :default-replacement #xfffd)
 
@@ -250,7 +250,7 @@ written in native byte-order with a leading byte-order mark."
                     (case (,getter seq start 2)
                       (#.+byte-order-mark-code+ (incf start 2) nil)
                       (#.+swapped-byte-order-mark-code+ (incf start 2) t)
-                      (t #+babel::le t)))))
+                      (t #+little-endian t)))))
        (loop with count fixnum = 0
              with i fixnum = start
              while (<= i (- end 2)) do
@@ -304,7 +304,7 @@ written in native byte-order with a leading byte-order mark."
                    (case (,getter src start 2)
                      (#.+byte-order-mark-code+ (incf start 2) nil)
                      (#.+swapped-byte-order-mark-code+ (incf start 2) t)
-                     (t #+babel::le t)))))
+                     (t #+little-endian t)))))
        (loop with i fixnum = start
              for di fixnum from d-start
              until (= i end) do
@@ -363,10 +363,10 @@ order with a leading byte-order mark."
   :code-unit-size 32
   :native-endianness t ; not necessarily true when decoding
   :literal-char-code-limit #x110000
-  :use-bom #+babel::le :utf-32le #+babel::be :utf-32be
+  :use-bom #+little-endian :utf-32le #+big-endian :utf-32be
   :bom-encoding
-  #+babel::be #(#x00 #x00 #xfe #xff)
-  #+babel::le #(#xff #xfe #x00 #x00)
+  #+big-endian #(#x00 #x00 #xfe #xff)
+  #+little-endian #(#xff #xfe #x00 #x00)
   :nul-encoding #(0 0 0 0))
 
 (define-octet-counter :utf-32 (getter type)

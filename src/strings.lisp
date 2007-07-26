@@ -52,7 +52,7 @@
 ;;; Adapted from Ironclad.  TODO: check if it's worthwhile adding
 ;;; implementation-specific accessors such as SAP-REF-* for SBCL.
 (defmacro ub-get (vector index &optional (bytes 1) (endianness :ne))
-  (let ((big-endian (member endianness '(:be #+babel::be :ne))))
+  (let ((big-endian (member endianness '(:be #+big-endian :ne))))
     (babel-encodings::once-only (vector index)
       `(logand
         ,(1- (ash 1 (* 8 bytes)))
@@ -65,7 +65,8 @@
                  collect `(ash (aref ,vector (+ ,index ,offset)) ,shift)))))))
 
 (defmacro ub-set (value vector index &optional (bytes 1) (endianness :ne))
-  (let ((big-endian (member endianness '(:be #+babel::be :ne #+babel::le :re))))
+  (let ((big-endian (member endianness
+                            '(:be #+big-endian :ne #+little-endian :re))))
     `(progn
        ,@(loop for i from 1 to bytes
                for offset = (if big-endian (- bytes i) (1- i)) collect
