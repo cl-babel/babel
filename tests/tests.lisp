@@ -34,10 +34,6 @@
   (make-array (length contents) :element-type '(unsigned-byte 8)
               :initial-contents contents))
 
-;;; Because Lispworks doesn't like #\uXXXX...
-(defun code-to-string (code)
-  (string (code-char code)))
-
 ;;;; Simple tests using ASCII
 
 (deftest enc.ascii.1
@@ -45,12 +41,12 @@
   #(97 98 99))
 
 (deftest enc.ascii.2
-    (string-to-octets (code-to-string #xed) :encoding :ascii :errorp nil)
+    (string-to-octets (string #\uED) :encoding :ascii :errorp nil)
   #(#x1a))
 
 (deftest enc.ascii.3
     (handler-case
-        (string-to-octets (code-to-string #xed) :encoding :ascii :errorp t)
+        (string-to-octets (string #\uED) :encoding :ascii :errorp t)
       (character-encoding-error (c)
         (values
          (character-coding-error-position c)
@@ -110,7 +106,7 @@
 
 (deftest dec.utf-8.1
     (string= (octets-to-string (ub8v 228 189 160 229) :errorp nil)
-             (code-to-string #x4f60))
+             (string #\u4f60))
   t)
 
 (deftest dec.utf-8.2

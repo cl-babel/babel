@@ -46,7 +46,8 @@
      (:file "enc-iso-8859")
      (:file "enc-unicode")
      (:file "strings")
-     (:file "external-format")))))
+     (:file "external-format")
+     #-openmcl (:file "fix-sharp-backslash")))))
 
 (defmethod perform ((o test-op) (c (eql (find-system :babel))))
   (operate 'asdf:load-op :babel-tests)
