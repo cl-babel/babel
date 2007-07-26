@@ -218,11 +218,15 @@ NAME.  Signals an error if one is not found."
                   (notice-mapping ,enc cm))))
       ht))
 
-(defun lookup-mapping (ht enc-name)
+(defun lookup-mapping (ht encoding)
   "HT should be an hashtable created by
-INSTANTIATE-CONCRETE-MAPPINGS. NAME should be a keyword symbol
-denoting a character encoding name or alias."
-  (or (gethash enc-name ht)
+INSTANTIATE-CONCRETE-MAPPINGS. ENCODING should be either an
+encoding object or a keyword symbol denoting a character encoding
+name or one of its aliases."
+  (or (gethash (etypecase encoding
+                 (character-encoding (enc-name encoding))
+                 (keyword encoding))
+               ht)
       (error "signal proper error here")))
 
 ;;;; Utilities used in enc-*.lisp

@@ -196,3 +196,8 @@
       (format t "~&;;~%")
       failed)
   nil)
+
+;;; RT: accept encoding objects in LOOKUP-MAPPING etc.
+(deftest encoding-objects.1
+    (string-to-octets "abc" :encoding (get-character-encoding :ascii))
+  #(97 98 99))
