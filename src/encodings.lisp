@@ -90,7 +90,10 @@ encoding.")
 
 (defun get-character-encoding (name)
   "Lookups the character encoding denoted by the keyword symbol
-NAME.  Signals an error if one is not found."
+NAME.  Signals an error if one is not found.  If NAME is already
+a CHARACTER-ENCONDING object, it is returned unmodified."
+  (when (typep name 'character-encoding)
+    (return-from get-character-encoding name))
   (when (eq name :default)
     (setq name *default-character-encoding*))
   (or (gethash name *character-encodings*)
