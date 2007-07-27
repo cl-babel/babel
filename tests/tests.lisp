@@ -201,3 +201,13 @@
 (deftest encoding-objects.1
     (string-to-octets "abc" :encoding (get-character-encoding :ascii))
   #(97 98 99))
+
+(deftest sharp-backslash.1
+    (loop for string in '("#\\a" "#\\u" "#\\ued")
+          collect (char-code (read-from-string string)))
+  (97 117 #xed))
+
+(deftest sharp-backslash.2
+    (handler-case (read-from-string "#\\u12zz")
+      (reader-error () 'reader-error))
+  reader-error)

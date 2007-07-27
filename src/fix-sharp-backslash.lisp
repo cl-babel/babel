@@ -26,9 +26,9 @@
 
 (in-package #:babel-encodings)
 
-;;; This is probably not portable but seems to work.
 (defun signal-reader-error (stream thing)
-  (error 'reader-error :stream stream
+  (error #-clisp 'reader-error #+clisp 'sys::simple-reader-error
+         :stream stream
          :format-control "Unrecognized character name: u~A"
          :format-arguments (list thing)))
 
@@ -37,16 +37,21 @@
 #-allegro
 (defun sharp-backslash (stream backslash numarg)
   (let ((1st-char (read-char stream)))
-    (if (and (or (eql 1st-char #\u) (eql 1st-char #\U))
-             (digit-char-p (peek-char nil stream) 16))
-        (let* ((*read-base* 16)
-               (token (read stream)))
+    (if (and (char-equal 1st-char #\u)
+             ;; because #\z is not a digit char...
+             (digit-char-p (peek-char nil stream nil #\z) 16))
+        ;; something better than READ would be nice here
+        (let ((token (let ((*read-base* 16)) (read stream))))
           (if (typep token 'code-point)
               (code-char token)
               (signal-reader-error stream token)))
         (progn
-          (unread-char 1st-char stream)
-          (funcall *original-sharp-backslash* stream backslash numarg)))))
+          (funcall *original-sharp-backslash*
+                   (make-concatenated-stream (make-string-input-stream
+                                              (string 1st-char))
+                                             stream)
+                   backslash
+                   numarg)))))
 
 ;;; Allegro's PEEK-CHAR seems broken on some situations, and the code
 ;;; above would generate an error about too many calls to UNREAD-CHAR.
@@ -57,7 +62,7 @@
 (defun sharp-backslash (stream backslash numarg)
   (let* ((1st-char (read-char stream))
          (rest (excl::read-extended-token stream))
-         (code (when (or (eql 1st-char #\u) (eql 1st-char #\U))
+         (code (when (char-equal 1st-char #\u)
                  (ignore-errors (parse-integer rest :radix 16)))))
     (if code
         (code-char code)
