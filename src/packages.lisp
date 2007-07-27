@@ -67,6 +67,7 @@
 
 (defpackage #:babel
   (:use #:common-lisp #:babel-encodings)
+  (:import-from #:babel-encodings #:with-unique-names #:once-only)
   (:export
    ;; external formats
    #:make-external-format

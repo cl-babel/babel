@@ -211,3 +211,8 @@
     (handler-case (read-from-string "#\\u12zz")
       (reader-error () 'reader-error))
   reader-error)
+
+;;; RT: the slow implementation of with-simple-vector was buggy.
+(deftest string-to-octets.1
+    (code-char (aref (string-to-octets "abc" :start 1 :end 2) 0))
+  #\b)
