@@ -61,8 +61,8 @@
 #+allegro
 (defun sharp-backslash (stream backslash numarg)
   (let* ((1st-char (read-char stream))
-         (rest (excl::read-extended-token stream))
-         (code (when (char-equal 1st-char #\u)
+         (rest (ignore-errors (excl::read-extended-token stream)))
+         (code (when (and rest (char-equal 1st-char #\u))
                  (ignore-errors (parse-integer rest :radix 16)))))
     (if code
         (code-char code)
