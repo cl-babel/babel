@@ -53,7 +53,7 @@
 ;;; implementation-specific accessors such as SAP-REF-* for SBCL.
 (defmacro ub-get (vector index &optional (bytes 1) (endianness :ne))
   (let ((big-endian (member endianness '(:be #+big-endian :ne))))
-    (once-only (vector index)
+    (babel-encodings::once-only (vector index)
       `(logand
         ,(1- (ash 1 (* 8 bytes)))
         (logior
@@ -128,8 +128,8 @@ shouldn't attempt to modify V."
        ,@body))
   ;; slow, copying implementation
   #-(or sbcl cmu openmcl allegro)
-  (once-only (vector)
-    (with-unique-names (temp)
+  (babel-encodings::once-only (vector)
+    (babel-encodings::with-uniques-names (temp)
       `(let* ((,e ,end)
               (,s ,start)
               (,temp (make-array (- ,e ,s)
@@ -139,7 +139,7 @@ shouldn't attempt to modify V."
 
 (defmacro with-checked-simple-vector (((v vector) (s start) (e end)) &body body)
   "Like WITH-SIMPLE-VECTOR but bound-checks START and END."
-  (once-only (vector start)
+  (babel-encodings::once-only (vector start)
     `(let ((,e (or ,end (length ,vector))))
        (check-vector-bounds ,vector ,start ,e)
        (with-simple-vector ((,v ,vector) (,s ,start) (,e ,e))
