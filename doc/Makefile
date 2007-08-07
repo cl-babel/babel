@@ -1,40 +1,31 @@
-# -*- Mode: Makefile; tab-width: 3; indent-tabs-mode: t -*-
-#
-# Makefile --- Make targets for generating the documentation.
-#
-# Copyright (C) 2005-2007, Luis Oliveira  <loliveira@common-lisp.net>
-#
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation files
-# (the "Software"), to deal in the Software without restriction,
-# including without limitation the rights to use, copy, modify, merge,
-# publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so,
-# subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# -*- Mode: Makefile; tab-width: 4; indent-tabs-mode: t -*-
 
-all: manual spec
+MANUAL := "babel"
+SYSTEM := "babel"
+PACKAGES := babel babel-encodings
+TITLE := "Babel Manual"
+CSS := "default"
 
-manual: babel-manual.texinfo style.css
-	sh gendocs.sh -o manual --html "--css-include=style.css" babel-manual "Babel User Manual"
+export LISP ?= sbcl
+export SBCL_OPTIONS ?= --noinform
+
+.PHONY: all clean html pdf upload
+
+all:
+	texinfo-docstrings all $(SYSTEM) $(MANUAL) $(TITLE) $(CSS) $(PACKAGES)
+
+pdf:
+	texinfo-docstrings pdf $(SYSTEM) $(MANUAL) $(TITLE) $(CSS) $(PACKAGES)
+
+html:
+	texinfo-docstrings html $(SYSTEM) $(MANUAL) $(TITLE) $(CSS) $(PACKAGES)
+
+upload:
+#	rsync -av --delete -e ssh manual common-lisp.net:/project/FOO/public_html/
+#	scp -r manual common-lisp.net:/project/cffi/public_html/
 
 clean:
-	find . \( -name "*.info" -o -name "*.aux" -o -name "*.cp" -o -name "*.fn" -o -name "*.fns" -o -name "*.ky" -o -name "*.log" -o -name "*.pg" -o -name "*.toc" -o -name "*.tp" -o -name "*.vr" -o -name "*.dvi" -o -name "*.cps" -o -name "*.vrs" \) -exec rm {} \;
-	rm -rf manual
+	find . \( -name "*.pdf" -o -name "*.html" -o -name "*.info" -o -name "*.aux" -o -name "*.cp" -o -name "*.fn" -o -name "*.fns" -o -name "*.ky" -o -name "*.log" -o -name "*.pg" -o -name "*.toc" -o -name "*.tp" -o -name "*.vr" -o -name "*.dvi" -o -name "*.cps" -o -name "*.vrs" \) -exec rm {} \;
+	rm -rf include manual
 
-upload-docs:
-	rsync -av --delete -e ssh manual common-lisp.net:/project/babel/public_html/
-#	scp -r manual spec common-lisp.net:/project/babel/public_html/
-
-# vim: ft=make ts=3 noet
+# vim: ft=make ts=4 noet
