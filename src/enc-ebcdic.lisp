@@ -63,9 +63,9 @@
         finally (return rt)))
 
 (define-unibyte-encoder :ebcdic-us (code)
-  (when (>= code 256)
-    (setq code (handle-error)))
-  (set-octet (aref *ebcdic-encode-table* code)))
+  (if (>= code 256)
+      (handle-error)
+      (aref *ebcdic-encode-table* code)))
 
 (define-unibyte-decoder :ebcdic-us (octet)
-  (set-code (aref *ebcdic-decode-table* octet)))
+  (aref *ebcdic-decode-table* octet))

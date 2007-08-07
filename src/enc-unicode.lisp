@@ -24,7 +24,8 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-;;; This implementation is largely based on OpenMCL's.
+;;; This implementation is largely based on OpenMCL's l1-unicode.lisp
+;;;   Copyright (C) 2006 Clozure Associates and contributors.
 
 (in-package #:babel-encodings)
 

@@ -245,9 +245,10 @@ name or one of its aliases."
 ;;; Utility macro around DEFINE-ENCODER that takes care of most of the
 ;;; work need to deal with an 8-bit, fixed-width character encoding.
 ;;;
-;;; BODY will be inside a loop and SET-OCTET will be lexically bound
-;;; to a macro that expands to a setter for the destination buffer.
-;;; It handles all sorts of type declarations.
+;;; BODY will be inside a loop and its return value will placed in the
+;;; destination buffer.  BODY will be surounded by lexical BLOCK which
+;;; will have the ENCODING's name, usually a keyword.  It handles all
+;;; sorts of type declarations.
 ;;;
 ;;; See enc-ascii.lisp for a simple usage example.
 (defmacro define-unibyte-encoder (encoding (code) &body body)
@@ -260,19 +261,16 @@ name or one of its aliases."
                    (fixnum ,',start ,',end ,',d-start))
           (loop for ,',i fixnum from ,',start below ,',end
                 and ,',di fixnum from ,',d-start do
-                (let ((,',code (,,s-getter ,',src ,',i)))
-                  (declare (type code-point ,',code))
-                  (macrolet
-                      ;; this should probably be a function...
-                      ((handle-error
-                           (&optional (condition ''character-encoding-error))
-                         `(encoding-error
-                           ,',',code ,',',encoding ,',',src ,',',i
-                           +sub+ ,condition))
-                       ;; FIXME
-                       (set-octet (value)
-                         `(,',,d-setter ,value ,',',dest ,',',di)))
-                    ,@',body))
+                (,,d-setter
+                 (macrolet
+                     ;; this should probably be a function...
+                     ((handle-error (&optional (c ''character-encoding-error))
+                        `(encoding-error
+                          ,',',code ,',',encoding ,',',src ,',',i +sub+ ,c)))
+                   (let ((,',code (,,s-getter ,',src ,',i)))
+                     (declare (type code-point ,',code))
+                     (block ,',encoding ,@',body)))
+                 ,',dest ,',di)
                 finally (return (the fixnum (- ,',d-start ,',di))))))))
 
 ;;; The decoder version of the above macro.
@@ -286,18 +284,17 @@ name or one of its aliases."
                    (fixnum ,',start ,',end ,',d-start))
           (loop for ,',i fixnum from ,',start below ,',end
                 and ,',di fixnum from ,',d-start do
-                (let ((,',octet (,,s-getter ,',src ,',i)))
-                  (declare (type ub8 ,',octet))
-                  (macrolet
-                      ;; this should probably be a function...
-                      ((handle-error
-                           (&optional (condition ''character-decoding-error))
-                         `(decoding-error
-                           (vector ,',',octet) ,',',encoding ,',',src ,',',i
-                           +sub+ ,condition))
-                       (set-code (value)
-                         `(,',,d-setter ,value ,',',dest ,',',di)))
-                    ,@',body))
+                (,,d-setter
+                 (macrolet
+                     ;; this should probably be a function...
+                     ((handle-error (&optional (c ''character-decoding-error))
+                        `(decoding-error
+                          (vector ,',',octet) ,',',encoding ,',',src ,',',i
+                          +sub+ ,c)))
+                   (let ((,',octet (,,s-getter ,',src ,',i)))
+                     (declare (type ub8 ,',octet))
+                     (block ,',encoding ,@',body)))
+                 ,',dest ,',di)
                 finally (return (the fixnum (- ,',d-start ,',di))))))))
 
 ;;;; Error Conditions

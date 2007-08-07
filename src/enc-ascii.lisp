@@ -33,11 +33,11 @@ character codes map to their Unicode equivalents."
   :literal-char-code-limit 128)
 
 (define-unibyte-encoder :ascii (code)
-  (when (>= code 128)
-    (setq code (handle-error)))
-  (set-octet code))
+  (if (>= code 128)
+      (handle-error)
+      code))
 
 (define-unibyte-decoder :ascii (octet)
-  (when (>= octet 128)
-    (setq octet (handle-error)))
-  (set-code octet))
+  (if (>= octet 128)
+      (handle-error)
+      octet))
