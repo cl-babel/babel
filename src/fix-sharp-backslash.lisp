@@ -32,7 +32,7 @@
          :format-control "Unrecognized character name: u~A"
          :format-arguments (list thing)))
 
-(defvar *original-sharp-backslash* nil)
+(defvar *original-sharp-backslash* (get-dispatch-macro-character #\# #\\))
 
 #-allegro
 (defun sharp-backslash (stream backslash numarg)
@@ -45,15 +45,14 @@
           (if (typep token 'code-point)
               (code-char token)
               (signal-reader-error stream token)))
-        (progn
-          (funcall *original-sharp-backslash*
-                   (make-concatenated-stream (make-string-input-stream
-                                              (string 1st-char))
-                                             stream)
-                   backslash
-                   numarg)))))
+        (funcall *original-sharp-backslash*
+                 (make-concatenated-stream (make-string-input-stream
+                                            (string 1st-char))
+                                           stream)
+                 backslash
+                 numarg))))
 
-;;; Allegro's PEEK-CHAR seems broken on some situations, and the code
+;;; Allegro's PEEK-CHAR seems broken in some situations, and the code
 ;;; above would generate an error about too many calls to UNREAD-CHAR.
 ;;; Then Allegro's original SHARP-BACKSLASH wants to UNREAD-CHAR
 ;;; twice, very weird.  This is the best workaround I could think of.
@@ -71,8 +70,5 @@
           (read-char s)
           (read-char s)
           (funcall *original-sharp-backslash* s backslash numarg)))))
-
-(when (null *original-sharp-backslash*)
-  (setq *original-sharp-backslash* (get-dispatch-macro-character #\# #\\)))
 
 (set-dispatch-macro-character #\# #\\ #'sharp-backslash)
