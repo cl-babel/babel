@@ -24,22 +24,17 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(defpackage #:babel-system
-  (:use #:cl #:asdf))
-(in-package #:babel-system)
-
 (defsystem babel
   :description "Babel, a charset conversion library."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
   :version "0.1.0"
   :licence "MIT"
-  :depends-on (trivial-features)
+  :depends-on (trivial-features alexandria)
   :components
   ((:module src
     :serial t
     :components
     ((:file "packages")
-     (:file "utils")
      (:file "encodings")
      (:file "enc-ascii")
      (:file "enc-ebcdic")
@@ -48,9 +43,5 @@
      (:file "strings")
      (:file "external-format")
      #-openmcl (:file "fix-sharp-backslash")))))
-
-(defmethod perform ((o test-op) (c (eql (find-system :babel))))
-  (operate 'asdf:load-op :babel-tests)
-  (operate 'asdf:test-op :babel-tests))
 
 ;;; vim: ft=lisp et

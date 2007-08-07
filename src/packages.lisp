@@ -27,7 +27,7 @@
 (in-package #:cl-user)
 
 (defpackage #:babel-encodings
-  (:use #:common-lisp)
+  (:use #:common-lisp #:alexandria)
   (:export
    ;; character encoding objects
    #:list-character-encodings
@@ -66,7 +66,7 @@
    #:end-of-input-in-character))
 
 (defpackage #:babel
-  (:use #:common-lisp #:babel-encodings)
+  (:use #:common-lisp #:babel-encodings #:alexandria)
   (:import-from #:babel-encodings)
   (:export
    ;; external formats
