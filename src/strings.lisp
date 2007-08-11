@@ -98,7 +98,7 @@
 
 (defparameter *string-vector-mappings*
   (instantiate-concrete-mappings
-   :optimize ((speed 3) (safety 3) (debug 0) (compilation-speed 0))
+   ;; :optimize ((speed 3) (safety 0) (debug 0) (compilation-speed 0))
    :octet-seq-setter ub-set
    :octet-seq-getter ub-get
    :octet-seq-type (simple-array (unsigned-byte 8) (*))

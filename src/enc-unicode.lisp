@@ -297,9 +297,9 @@ code points for each invalid byte."
                (t
                 ;; FIXME: clean this mess up.
                 (let* ((u1 octet)
-                       (u2 (when (>= noctets 2) (,getter seq (1+ i))))
-                       (u3 (when (>= noctets 3) (,getter seq (+ i 2))))
-                       (u4 (when (= noctets 4) (,getter seq (+ i 3))))
+                       (u2 (if (>= noctets 2) (,getter seq (1+ i)) 0))
+                       (u3 (if (>= noctets 3) (,getter seq (+ i 2)) 0))
+                       (u4 (if (= noctets 4) (,getter seq (+ i 3)) 0))
                        (inc (or (and (> noctets 1)
                                      (< u1 #xc2))
                                 (and (= noctets 2)
