@@ -159,26 +159,50 @@ shouldn't attempt to modify V."
   `(lisp::with-array-data ((,v ,vector) (,s ,start) (,e ,end))
      ,@body)
   #+openmcl
-  `(multiple-value-bind (,v ,s)
-       (ccl::array-data-and-offset ,vector)
-     (incf ,s ,start)
-     (let ((,e (+ ,end ,s)))
-       ,@body))
+  (with-unique-names (offset)
+    `(multiple-value-bind (,v ,offset)
+         (ccl::array-data-and-offset ,vector)
+       (let ((,s (+ ,start ,offset))
+             (,e (+ ,end ,offset)))
+         ,@body)))
   #+allegro
-  `(excl::with-underlying-simple-vector (,vector ,v ,s)
-     (incf ,s ,start)
-     (let ((,e (+ ,end ,s)))
-       ,@body))
+  (with-unique-names (offset)
+    `(excl::with-underlying-simple-vector (,vector ,v ,offset)
+       (let ((,e (+ ,end ,offset))
+             (,s (+ ,start ,offset)))
+         ,@body)))
   ;; slow, copying implementation
   #-(or sbcl cmu openmcl allegro)
-  (once-only (vector start end)
-    (with-unique-names (temp)
-      `(let* ((,e (- ,end ,start))
-              (,s 0)
-              (,temp (make-array (- ,e ,s)
-                                 :element-type (array-element-type ,vector)))
-              (,v (replace ,temp ,vector :start2 ,start :end2 ,end)))
-        ,@body))))
+  `(once-only (vector)
+     (funcall (if (adjustable-array-p ,vector)
+                  #'call-with-array-data/copy
+                  #'call-with-array-data/fast)
+              ,vector ,start ,end
+              (lambda (,v ,s ,e) ,@body))))
+
+#-(or sbcl cmu openmcl allegro)
+(progn
+  ;; Stolen from f2cl.
+  (defun array-data-and-offset (array)
+    (loop with offset = 0 do
+          (multiple-value-bind (displaced-to index-offset)
+              (array-displacement array)
+            (when (null displaced-to)
+              (return-from array-data-and-offset
+                (values array offset)))
+            (incf offset index-offset)
+            (setf array displaced-to))))
+
+  (defun call-with-array-data/fast (vector start end fn)
+    (multiple-value-bind (data offset)
+        (array-data-and-offset vector)
+      (funcall fn data (+ offset start) (+ offset end))))
+
+  (defun call-with-array-data/copy (vector start end fn)
+    (funcall fn (replace (make-array (- end start) :element-type
+                                     (array-element-type vector))
+                         vector :start2 start :end2 end)
+             0 (- end start))))
 
 (defmacro with-checked-simple-vector (((v vector) (s start) (e end)) &body body)
   "Like WITH-SIMPLE-VECTOR but bound-checks START and END."
