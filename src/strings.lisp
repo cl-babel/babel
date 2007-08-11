@@ -85,16 +85,17 @@
 ;;; Also, with (> SPEED SAFETY) (setf (schar base-str n) big-char)
 ;;; will quietly work, sort of.
 ;;;
-;;; But, for example, on lispworks (typep "abc" '(array character (*))) => NIL
-;;; So for now define these as STRING and SIMPLE-STRING and don't
-;;; optimize with (> SPEED SAFETY) because that'll break.
+;;; XXX: test this on various lisps.
+
+(deftype unicode-char ()
+  #+lispworks 'lw:simple-char
+  #-lispworks 'character)
+
 (deftype simple-unicode-string ()
-  ;; '(simple-array #+lispworks base-char #-lispworks extended-char (*))
-  'simple-string)
+  '(simple-array unicode-char (*)))
 
 (deftype unicode-string ()
-  ;; '(array #+lispworks base-char #-lispworks extended-char (*))
-  'string)
+  '(vector unicode-char *))
 
 (defparameter *string-vector-mappings*
   (instantiate-concrete-mappings
@@ -207,7 +208,7 @@ shouldn't attempt to modify V."
           (mapping (lookup-mapping *string-vector-mappings* encoding)))
       (multiple-value-bind (size new-end)
           (funcall (code-point-counter mapping) vector start end -1)
-        (let ((string (make-string size)))
+        (let ((string (make-string size :element-type 'unicode-char)))
           (funcall (decoder mapping) vector start new-end string 0)
           string)))))
 

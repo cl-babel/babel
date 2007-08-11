@@ -69,6 +69,10 @@
   (:use #:common-lisp #:babel-encodings #:alexandria)
   (:import-from #:babel-encodings)
   (:export
+   ;; types
+   #:unicode-char
+   #:unicode-string
+   #:simple-unicode-string
    ;; external formats
    #:make-external-format
    #:ensure-external-format
