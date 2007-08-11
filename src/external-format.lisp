@@ -27,8 +27,8 @@
 (in-package #:babel)
 
 (defvar *default-eol-style*
-  #+(or win32 mswindows) :crlf
-  #-(or win32 mswindows) :lf
+  #+windows :crlf
+  #-windows :lf
   "The end-of-line style used by external formats if none is
 explicitly given.  Depends on the OS the code is compiled on.")
 
