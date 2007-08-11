@@ -197,6 +197,241 @@ in 2 to 4 bytes."
                         dest di))
              finally (return (the fixnum (- d-start di)))))))
 
+;;;; UTF-8B
+
+;;; The following excerpt from a linux-utf8 message by Markus Kuhn is
+;;; the closest thing to a UTF-8B specification:
+;;;
+;;; <http://mail.nl.linux.org/linux-utf8/2000-07/msg00040.html>
+;;;
+;;; "D) Emit a malformed UTF-16 sequence for every byte in a malformed
+;;;     UTF-8 sequence
+;;;
+;;;  All the previous options for converting malformed UTF-8 sequences
+;;;  to UTF-16 destroy information. This can be highly undesirable in
+;;;  applications such as text file editors, where guaranteed binary
+;;;  transparency is a desireable feature. (E.g., I frequently edit
+;;;  executable code or graphic files with the Emacs text editor and I
+;;;  hate the idea that my editor might automatically make U+FFFD
+;;;  substitutions at locations that I haven't even edited when I save
+;;;  the file again.)
+;;;
+;;;  I therefore suggested 1999-11-02 on the unicode@xxxxxxxxxxx
+;;;  mailing list the following approach. Instead of using U+FFFD,
+;;;  simply encode malformed UTF-8 sequences as malformed UTF-16
+;;;  sequences. Malformed UTF-8 sequences consist excludively of the
+;;;  bytes 0x80 - 0xff, and each of these bytes can be represented
+;;;  using a 16-bit value from the UTF-16 low-half surrogate zone
+;;;  U+DC80 to U+DCFF. Thus, the overlong "K" (U+004B) 0xc1 0x8b from
+;;;  the above example would be represented in UTF-16 as U+DCC1
+;;;  U+DC8B. If we simply make sure that every UTF-8 encoded surrogate
+;;;  character is also treated like a malformed sequence, then there
+;;;  is no way that a single high-half surrogate could precede the
+;;;  encoded malformed sequence and cause a valid UTF-16 sequence to
+;;;  emerge.
+;;;
+;;;  This way 100% binary transparent UTF-8 -> UTF-16 -> UTF-8
+;;;  round-trip compatibility can be achieved quite easily.
+;;;
+;;;  On an output device, a lonely low-half surrogate character should
+;;;  be treated just like a character outside the adopted subset of
+;;;  representable characters, that is for the end user, the display
+;;;  would look exactly like with semantics B), i.e. one symbol per
+;;;  byte of a malformed sequence. However in contrast to semantics
+;;;  B), no information is thrown away, and a cut&paste in an editor
+;;;  or terminal emulator will be guaranteed to reconstruct the
+;;;  original byte sequence. This should greatly reduce the incidence
+;;;  of accidental corruption of binary data by UTF-8 -> UTF-16 ->
+;;;  UTF-8 conversion round trips."
+
+(define-character-encoding :utf-8b
+    "An 8-bit, variable-length character encoding in which
+character code points in the range #x00-#x7f can be encoded in a
+single octet; characters with larger code values can be encoded
+in 2 to 4 bytes.  Invalid UTF-8 sequences are encoded with #xDCXX
+code points for each invalid byte."
+  :max-units-per-char 4
+  :literal-char-code-limit #x80
+  :bom-encoding #(#xef #xbb #xbf)
+  :default-replacement nil)
+
+;;; TODO: reuse the :UTF-8 octet counter through a simple macro.
+(define-octet-counter :utf-8b (getter type)
+  `(lambda (seq start end max)
+     (declare (type ,type seq) (fixnum start end max))
+     (loop with noctets fixnum = 0
+           for i fixnum from start below end
+           for code of-type code-point = (,getter seq i) do
+           (let ((new (+ (cond ((< code #x80) 1)
+                               ((< code #x800) 2)
+                               ((<= #xdc80 code #xdcff) 1)
+                               ((< code #x10000) 3)
+                               (t 4))
+                         noctets)))
+             (if (and (plusp max) (> new max))
+                 (loop-finish)
+                 (setq noctets new)))
+           finally (return (values noctets i)))))
+
+(define-code-point-counter :utf-8b (getter type)
+  `(lambda (seq start end max)
+     (declare (type ,type seq) (fixnum start end max))
+     (loop with nchars fixnum = 0
+           with i fixnum = start
+           while (< i end) do
+           ;; wrote this code with LET instead of FOR because CLISP's
+           ;; LOOP doesn't like WHILE clauses before FOR clauses.
+           (let* ((octet (,getter seq i))
+                  (noctets (cond ((< octet #x80) 1)
+                                 ((< octet #xe0) 2)
+                                 ((< octet #xf0) 3)
+                                 (t 4))))
+             (declare (type ub8 octet) (fixnum noctets))
+             (cond
+               ((> (+ i noctets) end)
+                ;; If this error is suppressed these last few bytes
+                ;; will be encoded as raw bytes later.
+                (decoding-error (vector octet) :utf-8 seq i
+                                nil 'end-of-input-in-character)
+                (return (values (+ nchars (- end i)) end)))
+               (t
+                ;; FIXME: clean this mess up.
+                (let* ((u1 octet)
+                       (u2 (when (>= noctets 2) (,getter seq (1+ i))))
+                       (u3 (when (>= noctets 3) (,getter seq (+ i 2))))
+                       (u4 (when (= noctets 4) (,getter seq (+ i 3))))
+                       (inc (or (and (> noctets 1)
+                                     (< u1 #xc2))
+                                (and (= noctets 2)
+                                     (not (logior u2 #x40)))
+                                (and (= noctets 3)
+                                     (not (and (< (f-logxor u2 #x80) #x40)
+                                               (< (f-logxor u3 #x80) #x40)
+                                               (or (>= u1 #xe1) (>= u2 #xa0)))))
+                                (and (= noctets 4)
+                                     (not
+                                      (and (< (f-logxor u2 #x80) #x40)
+                                           (< (f-logxor u3 #x80) #x40)
+                                           (< (f-logxor u4 #x80) #x40)
+                                           (or (>= u1 #xf1) (>= u2 #x90))))))))
+                  (let ((new-nchars (if inc (+ nchars noctets) (1+ nchars))))
+                    (when (and (plusp max) (> new-nchars max))
+                      (return (values nchars i)))
+                    (incf i noctets)
+                    (setq nchars new-nchars))))))
+           finally (progn
+                     (assert (= i end))
+                     (return (values nchars i))))))
+
+;;; TODO: reuse the :UTF-8 encoder with through a simple macro.
+(define-encoder :utf-8b (getter src-type setter dest-type)
+  `(lambda (src start end dest d-start)
+     (declare (type ,src-type src)
+              (type ,dest-type dest)
+              (fixnum start end d-start))
+     (loop with di fixnum = d-start
+           for i fixnum from start below end
+           for code of-type code-point = (,getter src i) do
+           (macrolet ((set-octet (offset value)
+                        `(,',setter ,value dest (the fixnum (+ di ,offset)))))
+             (cond
+               ;; 1 octet
+               ((< code #x80)
+                (set-octet 0 code)
+                (incf di))
+               ;; 2 octets
+               ((< code #x800)
+                (set-octet 0 (logior #xc0 (f-ash code -6)))
+                (set-octet 1 (logior #x80 (f-logand code #x3f)))
+                (incf di 2))
+               ;; 1 octet (invalid octet)
+               ((<= #xdc80 code #xdcff)
+                (set-octet 0 (f-logand code #xff))
+                (incf di))
+               ;; 3 octets
+               ((< code #x10000)
+                (set-octet 0 (logior #xe0 (f-ash code -12)))
+                (set-octet 1 (logior #x80 (f-logand #x3f (f-ash code -6))))
+                (set-octet 2 (logior #x80 (f-logand code #x3f)))
+                (incf di 3))
+               ;; 4 octets
+               (t
+                (set-octet 0 (logior #xf0 (f-logand #x07 (f-ash code -18))))
+                (set-octet 1 (logior #x80 (f-logand #x3f (f-ash code -12))))
+                (set-octet 2 (logior #x80 (f-logand #x3f (f-ash code -6))))
+                (set-octet 3 (logand #x3f code))
+                (incf di 4))))
+           ;; XXX: this return value is obviously wrong, but I'm
+           ;; leaving this in until either STRING-TO-OCTETS or some
+           ;; unit test catches it.
+           finally (return (the fixnum (- d-start di))))))
+
+(define-decoder :utf-8b (getter src-type setter dest-type)
+  `(lambda (src start end dest d-start)
+     (declare (type ,src-type src)
+              (type ,dest-type dest)
+              (fixnum start end d-start))
+     (let ((u2 0) (u3 0) (u4 0))
+       (declare (type ub8 u2 u3 u4))
+       (loop for di fixnum from d-start
+             for i fixnum from start below end
+             for u1 of-type ub8 = (,getter src i) do
+             ;; Unlike the UTF-8 version, this version of
+             ;; CONSUME-OCTET needs to check if I is being incremented
+             ;; past END because we might have trailing binary
+             ;; garbage.
+             (macrolet
+                 ((consume-octet (n)
+                    `(if (= i end)
+                         (,',getter src (incf i))
+                         (encode-raw-octets ,n)))
+                  (encode-raw-octets (n)
+                    `(progn
+                       ,@(loop for i below n and var in '(u1 u2 u3 u4)
+                               collect `(,',setter (logior #xdc00 ,var) dest di)
+                               unless (= i (1- n))
+                               collect '(incf di))
+                       (return-from set-body))))
+               (block set-body
+                 (,setter (cond
+                            ((< u1 #x80) ; 1 octet
+                             u1)
+                            ((>= u1 #xc2)
+                             (setq u2 (consume-octet 1))
+                             (cond
+                               ((< u1 #xe0) ; 2 octets
+                                (if (< (f-logxor u2 #x80) #x40)
+                                    (logior (f-ash (f-logand #x1f u1) 6)
+                                            (f-logxor u2 #x80))
+                                    (encode-raw-octets 2)))
+                               (t
+                                (setq u3 (consume-octet 2))
+                                (cond
+                                  ((< u1 #xf0) ; 3 octets
+                                   (if (and (< (f-logxor u2 #x80) #x40)
+                                            (< (f-logxor u3 #x80) #x40)
+                                            (or (>= u1 #xe1) (>= u2 #xa0)))
+                                       (logior
+                                        (f-ash (f-logand u1 #x0f) 12)
+                                        (f-logior (f-ash (f-logand u2 #x3f) 6)
+                                                  (f-logand u3 #x3f)))
+                                       (encode-raw-octets 3)))
+                                  (t    ; 4 octets
+                                   (setq u4 (consume-octet 3))
+                                   (if (and (< (f-logxor u2 #x80) #x40)
+                                            (< (f-logxor u3 #x80) #x40)
+                                            (< (f-logxor u4 #x80) #x40)
+                                            (or (>= u1 #xf1) (>= u2 #x90)))
+                                       (logior
+                                        (f-logior (f-ash (f-logand u1 7) 18)
+                                                  (f-ash (f-logxor u2 #x80) 12))
+                                        (f-logior (f-ash (f-logxor u3 #x80) 6)
+                                                  (f-logxor u4 #x80)))
+                                       (encode-raw-octets 4)))))))
+                            (t (encode-raw-octets 1)))
+                          dest di)))
+             finally (return (the fixnum (- d-start di)))))))
+
 ;;;; UTF-16
 
 ;;; TODO: add a way to pass some info at compile-time telling us that,

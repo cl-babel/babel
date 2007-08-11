@@ -216,3 +216,26 @@
 (deftest string-to-octets.1
     (code-char (aref (string-to-octets "abc" :start 1 :end 2) 0))
   #\b)
+
+(deftest simple-base-string.1
+    (string-to-octets (coerce "abc" 'base-string) :encoding :ascii)
+  #(97 98 99))
+
+(deftest utf-8b.1
+    (string-to-octets (coerce #(#\a #\b #\udcf0) 'string) :encoding :utf-8b)
+  #(97 98 #xf0))
+
+(deftest utf-8b.2
+    (octets-to-string (ub8v 97 98 #xcd) :encoding :utf-8b)
+  #(#\a #\b #\udccd))
+
+(deftest utf-8b.3
+    (octets-to-string (ub8v 97 #xf0 #xf1 #xff #x01) :encoding :utf-8b)
+  #(#\a #\udcf0 #\udcf1 #\udcff #\udc01))
+
+(deftest utf-8b.4
+    (let* ((octets (coerce (loop repeat 8192 collect (random (+ #x82)))
+                           '(array (unsigned-byte 8) (*))))
+           (string (octets-to-string octets :encoding :utf-8b)))
+      (equalp octets (string-to-octets string :encoding :utf-8b)))
+  t)
