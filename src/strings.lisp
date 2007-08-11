@@ -171,13 +171,13 @@ shouldn't attempt to modify V."
        ,@body))
   ;; slow, copying implementation
   #-(or sbcl cmu openmcl allegro)
-  (once-only (vector)
+  (once-only (vector start end)
     (with-unique-names (temp)
-      `(let* ((,e ,end)
-              (,s ,start)
+      `(let* ((,e (- ,end ,start))
+              (,s 0)
               (,temp (make-array (- ,e ,s)
                                  :element-type (array-element-type ,vector)))
-              (,v (replace ,temp ,vector :start2 ,s :end2 ,e)))
+              (,v (replace ,temp ,vector :start2 ,start :end2 ,end)))
         ,@body))))
 
 (defmacro with-checked-simple-vector (((v vector) (s start) (e end)) &body body)
