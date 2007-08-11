@@ -80,15 +80,57 @@
 (defmacro string-set (code string index)
   `(setf (schar ,string ,index) (code-char ,code)))
 
+;;; SIMPLE-BASE-STRING would also be a subtype of SIMPLE-STRING so we
+;;; don't use that because on SBCL BASE-CHARs can only hold ASCII.
+;;; Also, with (> SPEED SAFETY) (setf (schar base-str n) big-char)
+;;; will quietly work, sort of.
+;;;
+;;; But, for example, on lispworks (typep "abc" '(array character (*))) => NIL
+;;; So for now define these as STRING and SIMPLE-STRING and don't
+;;; optimize with (> SPEED SAFETY) because that'll break.
+(deftype simple-unicode-string ()
+  ;; '(simple-array #+lispworks base-char #-lispworks extended-char (*))
+  'simple-string)
+
+(deftype unicode-string ()
+  ;; '(array #+lispworks base-char #-lispworks extended-char (*))
+  'string)
+
 (defparameter *string-vector-mappings*
   (instantiate-concrete-mappings
-   :optimize ((speed 3) (debug 0) (compilation-speed 0) (safety 0))
+   :optimize ((speed 3) (safety 3) (debug 0) (compilation-speed 0))
    :octet-seq-setter ub-set
    :octet-seq-getter ub-get
    :octet-seq-type (simple-array (unsigned-byte 8) (*))
    :code-point-seq-setter string-set
    :code-point-seq-getter string-get
-   :code-point-seq-type simple-string))
+   :code-point-seq-type simple-unicode-string))
+
+#-(and)
+(defun debug-mappings (encodings &key (optimize '((debug 3) (safety 3)))
+                       (hash-table-place '*string-vector-mappings*)
+                       (octet-seq-setter 'ub-set) (octet-seq-getter 'ub-get)
+                       (octet-seq-type '(simple-array (unsigned-byte 8) (*)))
+                       (code-point-seq-setter 'string-set)
+                       (code-pointer-seq-getter 'string-get)
+                       (code-point-seq-type 'simple-unicode-string))
+  (let ((encodings (ensure-list encodings)))
+    (let ((*package* (find-package :babel-encodings))
+          (*print-case* :downcase))
+      (pprint
+       `(locally
+            (declare (optimize ,@optimize))
+          (setf ,hash-table-place (make-hash-table :test 'eq))
+          ,@(loop for enc in encodings
+                  for am = (gethash enc babel-encodings::*abstract-mappings*)
+                  collect
+                  `(let ((cm (make-instance 'babel-encodings::concrete-mapping)))
+                     ,(babel-encodings::%am-to-cm
+                       'cm am octet-seq-getter octet-seq-setter
+                       octet-seq-type code-pointer-seq-getter
+                       code-point-seq-setter code-point-seq-type)
+                     (setf (gethash ,enc ,hash-table-place) cm)))))))
+  (values))
 
 ;;; Do we want a more a specific error condition here?
 (defun check-vector-bounds (vector start end)
@@ -173,8 +215,9 @@ shouldn't attempt to modify V."
                          (start 0) end null-terminate errorp)
   (declare (ignore null-terminate))
   (check-type string string)
-  (with-checked-simple-vector ((string string) (start start) (end end))
-    (declare (type simple-string string))
+  (with-checked-simple-vector ((string (coerce string 'unicode-string))
+                               (start start) (end end))
+    (declare (type simple-unicode-string string))
     (let* ((*suppress-character-coding-errors* (not errorp))
            (mapping (lookup-mapping *string-vector-mappings* encoding))
            (vector (make-array (funcall (octet-counter mapping)
@@ -186,8 +229,9 @@ shouldn't attempt to modify V."
 (defun string-size-in-octets (string &key (start 0) end (max -1 maxp) errorp
                               (encoding *default-character-encoding*))
   (check-type string string)
-  (with-checked-simple-vector ((string string) (start start) (end end))
-    (declare (type simple-string string))
+  (with-checked-simple-vector ((string (coerce string 'unicode-string))
+                               (start start) (end end))
+    (declare (type simple-unicode-string string))
     (let ((mapping (lookup-mapping *string-vector-mappings* encoding))
           (*suppress-character-coding-errors* (not errorp)))
       (when maxp (assert (plusp max)))
