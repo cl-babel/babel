@@ -222,7 +222,8 @@
   #(97 98 99))
 
 (deftest utf-8b.1
-    (string-to-octets (coerce #(#\a #\b #\udcf0) 'string) :encoding :utf-8b)
+    (string-to-octets (coerce #(#\a #\b #\udcf0) 'unicode-string)
+                      :encoding :utf-8b)
   #(97 98 #xf0))
 
 (deftest utf-8b.2

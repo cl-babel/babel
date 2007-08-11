@@ -212,6 +212,10 @@ shouldn't attempt to modify V."
           (funcall (decoder mapping) vector start new-end string 0)
           string)))))
 
+;;; FIXME: we shouldn't really need that coercion to UNICODE-STRING
+;;; but we kind of because it's declared all over.  To avoid that,
+;;; we'd need different types for input and output strings.  Or maybe
+;;; this is not a problem; figure that out.
 (defun string-to-octets (string &key (encoding *default-character-encoding*)
                          (start 0) end null-terminate errorp)
   (declare (ignore null-terminate))
