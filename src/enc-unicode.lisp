@@ -383,8 +383,8 @@ code points for each invalid byte."
              (macrolet
                  ((consume-octet (n)
                     `(if (= i end)
-                         (,',getter src (incf i))
-                         (encode-raw-octets ,n)))
+                         (encode-raw-octets ,n)
+                         (,',getter src (incf i))))
                   (encode-raw-octets (n)
                     `(progn
                        ,@(loop for i below n and var in '(u1 u2 u3 u4)
