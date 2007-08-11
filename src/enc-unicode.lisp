@@ -382,7 +382,7 @@ code points for each invalid byte."
              ;; garbage.
              (macrolet
                  ((consume-octet (n)
-                    `(if (= i end)
+                    `(if (= i (1- end))
                          (encode-raw-octets ,n)
                          (,',getter src (incf i))))
                   (encode-raw-octets (n)
