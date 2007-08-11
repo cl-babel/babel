@@ -192,7 +192,8 @@ in 2 to 4 bytes."
                                                 (f-ash (f-logxor u2 #x80) 12))
                                       (f-logior (f-ash (f-logxor u3 #x80) 6)
                                                 (f-logxor u4 #x80)))
-                                     (handle-error 4))))))))
+                                     (handle-error 4)))))))
+                          (t (handle-error 1)))
                         dest di))
              finally (return (the fixnum (- d-start di)))))))
 
