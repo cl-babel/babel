@@ -133,7 +133,7 @@ in 2 to 4 bytes."
                 (set-octet 0 (logior #xf0 (f-logand #x07 (f-ash code -18))))
                 (set-octet 1 (logior #x80 (f-logand #x3f (f-ash code -12))))
                 (set-octet 2 (logior #x80 (f-logand #x3f (f-ash code -6))))
-                (set-octet 3 (logand #x3f code))
+                (set-octet 3 (logior #x80 (logand code #x3f)))
                 (incf di 4))))
            ;; XXX: this return value is obviously wrong, but I'm
            ;; leaving this in until either STRING-TO-OCTETS or some
