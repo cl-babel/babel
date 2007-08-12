@@ -81,7 +81,9 @@ in 2 to 4 bytes."
                   (next-i (+ i (cond ((< octet #x80) 1)
                                      ((< octet #xe0) 2)
                                      ((< octet #xf0) 3)
-                                     (t 4)))))
+                                     ((< octet #xf8) 4)
+                                     ((< octet #xfc) 5)
+                                     (t 6)))))
              (declare (type ub8 octet) (fixnum next-i))
              (cond
                ((> next-i end)
@@ -155,6 +157,15 @@ in 2 to 4 bytes."
              (macrolet
                  ((consume-octet ()
                     `(,',getter src (incf i)))
+                  ;; NOTE: we depend on this code to properly update i.
+                  (overlong-error (n)
+                    (once-only (n)
+                      `(decoding-error
+                        (concatenate 'vector
+                                     (vector u1 u2 (consume-octet) (consume-octet))
+                                     (when (>= ,n 5) (vector (consume-octet)))
+                                     (when (= ,n 6) (vector (consume-octet))))
+                        :utf-8 src (- i ,n) +repl+)))
                   (handle-error (n)
                     `(decoding-error (vector ,@(subseq '(u1 u2 u3 u4) 0 n))
                                      :utf-8 src (- i ,n) +repl+)))
@@ -164,6 +175,13 @@ in 2 to 4 bytes."
                           ((>= u1 #xc2)
                            (setq u2 (consume-octet))
                            (cond
+                             ;; at this point we can tell whether we
+                             ;; have an overlong UTF-8 sequence.
+                             ((or (> u1 #xf4) (and (= u1 #xf4) (> u2 #x8f)))
+                              (overlong-error (cond
+                                                ((< u1 #xf8) 4)
+                                                ((< u1 #xfc) 5)
+                                                (t 6))))
                              ((< u1 #xe0) ; 2 octets
                               (if (< (f-logxor u2 #x80) #x40)
                                   (logior (f-ash (f-logand #x1f u1) 6)
