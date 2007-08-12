@@ -87,6 +87,11 @@
 ;;;
 ;;; XXX: test this on various lisps.
 
+(defconstant unicode-char-code-limit
+  char-code-limit
+  "An alias for CL:CHAR-CODE-LIMIT which might be lower than
+#x110000 on some Lisps.")
+
 (deftype unicode-char ()
   #+lispworks 'lw:simple-char
   #-lispworks 'character)

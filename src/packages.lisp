@@ -72,6 +72,7 @@
   (:export
    ;; types
    #:unicode-char
+   #:unicode-char-code-limit
    #:unicode-string
    #:simple-unicode-string
    ;; external formats
