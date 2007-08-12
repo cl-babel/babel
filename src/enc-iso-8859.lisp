@@ -633,9 +633,9 @@ characters found in the Turkish alphabet."
   :test #'equalp)
 
 (define-unibyte-decoder :iso-8859-9 (octet)
-  (if (< octet #xa0)
+  (if (< octet #xd0)
       octet
-      (svref +iso-8859-9-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-9-to-unicode+ (the fixnum (- octet #xd0)))))
 
 (define-character-encoding :iso-8859-10
     "An 8-bit, fixed-width character encoding in which codes
