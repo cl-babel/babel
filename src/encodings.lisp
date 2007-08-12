@@ -44,11 +44,14 @@
    ;; If NIL, it is necessary to swap 16- and 32-bit units.
    (native-endianness
     :initarg :native-endianness :reader enc-native-endianness :initform t)
-   ;; Code units and characters codes less than this value map to
-   ;; themselves.
-   (literal-char-code-limit
-    :initarg :literal-char-code-limit :reader enc-literal-char-code-limit
-    :initform 0)
+   ;; Code units less than this value map to themselves on input.
+   (decode-literal-code-unit-limit
+    :initarg :decode-literal-code-unit-limit :initform 0
+    :reader enc-decode-literal-code-unit-limit)
+   ;; Code points less than this value map to themselves on output.
+   (encode-literal-code-unit-limit
+    :initarg :encode-literal-code-unit-limit :initform 0
+    :reader enc-encode-literal-code-unit-limit)
    ;; Defines whether it is necessary to prepend a byte-order-mark to
    ;; determine the endianness.
    (use-bom :initarg :use-bom :initform nil :reader enc-use-bom)
@@ -63,6 +66,15 @@
    (default-replacement
     :initarg :default-replacement :reader enc-default-replacement
     :initform #x1a)))
+
+;;; I'm too lazy to write all the identical limits twice.
+(defmethod initialize-instance :after ((enc character-encoding)
+                                       &key literal-char-code-limit)
+  (when literal-char-code-limit
+    (setf (slot-value enc 'encode-literal-code-unit-limit)
+          literal-char-code-limit)
+    (setf (slot-value enc 'decode-literal-code-unit-limit)
+          literal-char-code-limit)))
 
 #-(and)
 (defmethod describe-object ((enc character-encoding) s)

@@ -586,7 +586,8 @@ Hebrew alphabet."
 other Unicode character values.  Intended to provide most
 characters found in the Turkish alphabet."
   :aliases '(:latin-5 :latin5)
-  :literal-char-code-limit #xd0)
+  :decode-literal-code-unit-limit #xd0
+  :encode-literal-code-unit-limit #xa0)
 
 (define-constant +unicode-d0-100-to-iso-8859-9+
     #(nil #xd1 #xd2 #xd3 #xd4 #xd5 #xd6 #xd7 ; #xd0-#xd7

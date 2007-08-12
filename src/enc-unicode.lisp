@@ -471,7 +471,8 @@ written in native byte-order with a leading byte-order mark."
   :max-units-per-char 2
   :code-unit-size 16
   :native-endianness t            ; not necessarily true when decoding
-  :literal-char-code-limit #x10000
+  :decode-literal-code-unit-limit #xd800
+  :encode-literal-code-unit-limit #x10000
   :use-bom #+big-endian :utf-16be #+little-endian :utf-16le
   :bom-encoding #+big-endian #(#xfe #xff) #+little-endian #(#xff #xfe)
   :nul-encoding #(0 0)

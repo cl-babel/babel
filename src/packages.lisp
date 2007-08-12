@@ -39,7 +39,8 @@
    #:enc-code-unit-size
    #:enc-max-units-per-char
    #:enc-native-endianness
-   #:enc-literal-char-code-limit
+   #:enc-decode-literal-code-unit-limit
+   #:enc-encode-literal-code-unit-limit
    #:enc-use-bom
    #:enc-bom-encoding
    #:enc-nul-encoding
