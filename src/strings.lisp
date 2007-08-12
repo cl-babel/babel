@@ -93,13 +93,17 @@
 #x110000 on some Lisps.")
 
 (deftype unicode-char ()
+  "The character type can hold any characters whose CHAR-CODEs
+are less than UNICODE-CHAR-CODE-LIMIT."
   #+lispworks 'lw:simple-char
   #-lispworks 'character)
 
 (deftype simple-unicode-string ()
+  "Alias for (SIMPLE-ARRAY UNICODE-CHAR (*))."
   '(simple-array unicode-char (*)))
 
 (deftype unicode-string ()
+  "Alias for (VECTOR UNICODE-CHAR *)."
   '(vector unicode-char *))
 
 (defparameter *string-vector-mappings*
