@@ -78,7 +78,7 @@ in 2 to 4 bytes."
            ;; wrote this code with LET instead of FOR because CLISP's
            ;; LOOP doesn't like WHILE clauses before FOR clauses.
            (let* ((octet (,getter seq i))
-                  (next-i (+ i (cond ((< octet #x80) 1)
+                  (next-i (+ i (cond ((< octet #xc0) 1)
                                      ((< octet #xe0) 2)
                                      ((< octet #xf0) 3)
                                      ((< octet #xf8) 4)
