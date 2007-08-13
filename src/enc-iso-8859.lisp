@@ -718,19 +718,16 @@ characters found the Thai alphabet."
   :literal-char-code-limit #xa0)
 
 (define-unibyte-encoder :iso-8859-11 (code)
-  (or (cond ((< code #xa1) code)
-            ((and (<= code #xfb)
-                  (not (and (>= code #xdb) (<= code #xde))))
-             (+ code #x0d60)))
-      (handle-error)))
+  (cond ((< code #xa1) code)
+        ((and (<= #xe01 code #xe5b)
+              (not (<= #xe3b code #xe3e)))
+         (- code #xd60))
+        (t (handle-error))))
 
 (define-unibyte-decoder :iso-8859-11 (octet)
-  (cond ((< octet #xa1) octet)
-        ((and (>= octet #xe01)
-              (<= octet #xe5b)
-              (not (and (>= octet #xe3b)
-                        (<= octet #xe3e))))
-         (- octet #xd60))
+  (cond ((<= octet #xa0) octet)
+        ((and (<= octet #xfb) (not (<= #xdb octet #xde)))
+         (+ octet #x0d60))
         (t (handle-error))))
 
 ;;; There is no iso-8859-12 encoding.
