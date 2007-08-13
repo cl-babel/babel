@@ -163,11 +163,11 @@
       (make-array (length data) :element-type '(unsigned-byte 8)
                   :initial-contents data))))
 
-(defun test-encoding (enc)
+(defun test-encoding (enc &optional input-enc-name)
   (let* ((*default-character-encoding* enc)
          (enc-name (string-downcase (symbol-name enc)))
          (utf8-octets (read-test-file enc-name "txt-utf8"))
-         (foo-octets (read-test-file enc-name "txt"))
+         (foo-octets (read-test-file (or input-enc-name enc-name) "txt"))
          (utf8-string (octets-to-string utf8-octets :encoding :utf-8 :errorp t))
          (foo-string (octets-to-string foo-octets :errorp t)))
     (assert (string= utf8-string foo-string))
@@ -189,6 +189,11 @@
         (finish-output)
         (handler-case
             (progn
+              (case enc
+                (:utf-16 (test-encoding :utf-16 "utf-16-with-le-bom")
+                         (format t "[le bom: OK] "))
+                (:utf-32 (test-encoding :utf-32 "utf-32-with-le-bom")
+                         (format t "[le bom: OK] ")))
               (test-encoding enc)
               (format t "OK~%"))
           ;; run TEST-ENCODING manually to have a look at the error
@@ -727,3 +732,11 @@
                          (cdr (assoc enc *iso-8859-tables*)))
           collect enc)
   nil)
+
+(deftest character-out-of-range.utf-32
+    (handler-case
+        (octets-to-string (ub8v 0 0 #xfe #xff 0 #x11 0 0)
+                          :encoding :utf-32 :errorp t)
+      (character-out-of-range () t)
+      (:no-error () nil))
+  t)
