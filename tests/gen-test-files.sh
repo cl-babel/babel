@@ -27,8 +27,7 @@
 
 INPUT_FILE="utf-8.txt"
 INPUT_ENC="utf-8"
-# 'ebcdic-us'
-CHARSETS=('ascii' 'iso-8859-1' 'utf-16' 'utf-32')
+CHARSETS=('ebcdic-us' 'ascii' 'iso-8859-1' 'utf-16' 'utf-32')
 
 echo "Converting $INPUT_FILE..."
 for c in ${CHARSETS[@]}; do
