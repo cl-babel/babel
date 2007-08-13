@@ -680,7 +680,7 @@ order with a leading byte-order mark."
                 (case (,getter seq 0 4)
                   ((#.+byte-order-mark-code+
                     #.+swapped-byte-order-mark-code-32+) t)))
-       (incf start))
+       (incf start 4))
      (multiple-value-bind (count rem)
          (floor (- end start) 4)
        (cond
