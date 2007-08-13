@@ -382,9 +382,15 @@ used.")
                      (character-coding-error-encoding c)
                      (character-coding-error-position c)))))
 
-;;; Signalled by DECODERs or CODE-POINT-COUNTERs of variable-width
-;;; character encodings.
-(define-condition end-of-input-in-character (character-decoding-error) ())
+(define-condition end-of-input-in-character (character-decoding-error)
+  ()
+  (:documentation "Signalled by DECODERs or CODE-POINT-COUNTERs
+of variable-width character encodings."))
+
+(define-condition character-out-of-range (character-decoding-error)
+  ()
+  (:documentation
+   "Signalled when the character being decoded is out of range."))
 
 (declaim (inline decoding-error))
 (defun decoding-error (octets enc buf pos

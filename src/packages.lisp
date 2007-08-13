@@ -64,7 +64,11 @@
    #:character-decoding-error-octets    ; accessor
    #:character-encoding-error
    #:character-encoding-error-code      ; accessor
-   #:end-of-input-in-character))
+   #:end-of-input-in-character
+   #:character-out-of-range
+   #:invalid-utf8-starter-byte
+   #:invalid-utf8-continuation-byte
+   #:overlong-utf8-sequence))
 
 (defpackage #:babel
   (:use #:common-lisp #:babel-encodings #:alexandria)
@@ -97,4 +101,8 @@
    #:character-decoding-error-octets    ; accessor
    #:character-encoding-error
    #:character-encoding-error-code      ; accessor
-   #:end-of-input-in-character))
+   #:end-of-input-in-character
+   #:character-out-of-range
+   #:invalid-utf8-starter-byte
+   #:invalid-utf8-continuation-byte
+   #:overlong-utf8-sequence))
