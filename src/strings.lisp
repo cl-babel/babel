@@ -52,7 +52,8 @@
 ;;; Adapted from Ironclad.  TODO: check if it's worthwhile adding
 ;;; implementation-specific accessors such as SAP-REF-* for SBCL.
 (defmacro ub-get (vector index &optional (bytes 1) (endianness :ne))
-  (let ((big-endian (member endianness '(:be #+big-endian :ne))))
+  (let ((big-endian (member endianness
+                            '(:be #+big-endian :ne #+little-endian :re))))
     (once-only (vector index)
       `(logand
         ,(1- (ash 1 (* 8 bytes)))
