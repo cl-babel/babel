@@ -209,8 +209,8 @@ shouldn't attempt to modify V."
          ,@body)))
   ;; slow, copying implementation
   #-(or sbcl cmu openmcl allegro)
-  `(once-only (vector)
-     (funcall (if (adjustable-array-p ,vector)
+  (once-only (vector)
+    `(funcall (if (adjustable-array-p ,vector)
                   #'call-with-array-data/copy
                   #'call-with-array-data/fast)
               ,vector ,start ,end
