@@ -259,7 +259,8 @@ shouldn't attempt to modify V."
 ;;;   * specify target vector/string + offset
 ;;;   * documentation :)
 
-(defun octets-to-string (vector &key (start 0) end errorp
+(defun octets-to-string (vector &key (start 0) end
+                         (errorp (not *suppress-character-coding-errors*))
                          (encoding *default-character-encoding*))
   (check-type vector (vector (unsigned-byte 8)))
   (with-checked-simple-vector ((vector vector) (start start) (end end))
@@ -277,7 +278,8 @@ shouldn't attempt to modify V."
 ;;; we'd need different types for input and output strings.  Or maybe
 ;;; this is not a problem; figure that out.
 (defun string-to-octets (string &key (encoding *default-character-encoding*)
-                         (start 0) end null-terminate errorp)
+                         (start 0) end null-terminate
+                         (errorp (not *suppress-character-coding-errors*)))
   (declare (ignore null-terminate))
   (check-type string string)
   (with-checked-simple-vector ((string (coerce string 'unicode-string))
@@ -291,7 +293,8 @@ shouldn't attempt to modify V."
       (funcall (encoder mapping) string start end vector 0)
       vector)))
 
-(defun string-size-in-octets (string &key (start 0) end (max -1 maxp) errorp
+(defun string-size-in-octets (string &key (start 0) end (max -1 maxp)
+                              (errorp (not *suppress-character-coding-errors*))
                               (encoding *default-character-encoding*))
   (check-type string string)
   (with-checked-simple-vector ((string (coerce string 'unicode-string))
@@ -302,7 +305,8 @@ shouldn't attempt to modify V."
       (when maxp (assert (plusp max)))
       (funcall (octet-counter mapping) string start end max))))
 
-(defun vector-size-in-chars (vector &key (start 0) end (max -1 maxp) errorp
+(defun vector-size-in-chars (vector &key (start 0) end (max -1 maxp)
+                             (errorp (not *suppress-character-coding-errors*))
                              (encoding *default-character-encoding*))
   (check-type vector (vector (unsigned-byte 8)))
   (with-checked-simple-vector ((vector vector) (start start) (end end))
