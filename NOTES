@@ -22,7 +22,7 @@ LIST OF IDEAS AND TODO ITEMS FOR BABEL
   * Address the various XXX and TODO items in the source.
 
   * Should we start adding a lot of encodings, a load-on-demand scheme
-    might come in handy.
+    might come in handy. It would also help with debugging.
 
   * Make the test suite reusable, very much like mappings are reusable.
 
