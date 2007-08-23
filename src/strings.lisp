@@ -94,7 +94,7 @@
 #x110000 on some Lisps.")
 
 (deftype unicode-char ()
-  "The character type can hold any characters whose CHAR-CODEs
+  "This character type can hold any characters whose CHAR-CODEs
 are less than UNICODE-CHAR-CODE-LIMIT."
   #+lispworks 'lw:simple-char
   #-lispworks 'character)
