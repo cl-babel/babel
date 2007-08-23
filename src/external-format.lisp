@@ -59,3 +59,7 @@ CHARACTER-ENCODING and an end-of-line style."))
     (external-format thing)
     (character-encoding (make-instance 'external-format :encoding thing))
     (symbol (make-external-format thing))))
+
+(defun external-format-equal (ef1 ef2)
+  (and (eq (external-format-encoding ef1) (external-format-encoding ef2))
+       (eq (external-format-eol-style ef1) (external-format-eol-style ef2))))

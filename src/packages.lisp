@@ -84,6 +84,7 @@
    #:ensure-external-format
    #:external-format-encoding
    #:external-format-eol-style
+   #:external-format-equal
    #:*default-eol-style*
    ;; general user API
    #:*default-character-encoding*
