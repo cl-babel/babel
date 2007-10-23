@@ -58,7 +58,8 @@ CHARACTER-ENCODING and an end-of-line style."))
   (etypecase thing
     (external-format thing)
     (character-encoding (make-instance 'external-format :encoding thing))
-    (symbol (make-external-format thing))))
+    (symbol (make-external-format thing))
+    (list (apply #'make-instance 'external-format :encoding thing))))
 
 (defun external-format-equal (ef1 ef2)
   (and (eq (external-format-encoding ef1) (external-format-encoding ef2))
