@@ -92,11 +92,11 @@ Europe."
       nil #xac #xbc #xaf #xbf #xae #xbe nil) ; #x178-#x17f
   :test #'equalp)
 
-(define-constant +unicode-00c0-00e0-to-iso-8859-2+
-    #(nil nil nil nil nil nil nil #xb7  ; #xc0-#xc7
-      nil nil nil nil nil nil nil nil   ; #xc8-#xcf
-      nil nil nil nil nil nil nil nil   ; #xd0-#xd7
-      #xa2 #xff nil #xb2 nil #xbd nil nil) ; #xd8-#xdf
+(define-constant +unicode-02c0-02e0-to-iso-8859-2+
+    #(nil nil nil nil nil nil nil #xb7  ; #x2c0-#x2c7
+      nil nil nil nil nil nil nil nil   ; #x2c8-#x2cf
+      nil nil nil nil nil nil nil nil   ; #x2d0-#x2d7
+      #xa2 #xff nil #xb2 nil #xbd nil nil) ; #x2d8-#x2df
   :test #'equalp)
 
 (define-unibyte-encoder :iso-8859-2 (code)
@@ -104,8 +104,8 @@ Europe."
             ((< code #x180)
              (svref +unicode-00a0-0180-to-iso-8859-2+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x2c0) (< code #x2e0))
-             (svref +unicode-00c0-00e0-to-iso-8859-2+
+            ((<= #x2c0 code #x2df)
+             (svref +unicode-02c0-02e0-to-iso-8859-2+
                     (the fixnum (- code #x2c0)))))
       (handle-error)))
 
@@ -185,10 +185,10 @@ characters found in most languages used in Southern Europe."
             ((< code #x100)
              (svref +unicode-a0-100-to-iso-8859-3+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x108) (< code #x180))
+            ((<= #x108 code #x17f)
              (svref +unicode-108-180-to-iso-8859-3+
                     (the fixnum (- code #x108))))
-            ((and (>= code #x2d8) (< code #x2e0))
+            ((<= #x2d8 code #x2df)
              (svref +unicode-2d8-2e0-to-iso-8859-3+
                     (the fixnum (- code #x2d8)))))
       (handle-error)))
@@ -270,7 +270,7 @@ characters found in most languages used in Northern Europe."
             ((< code #x180)
              (svref +unicode-a0-180-to-iso-8859-4+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x2c0) (< code #x2e0))
+            ((<= #x2c0 code #x2df)
              (svref +unicode-2c0-2e0-to-iso-8859-4+
                     (the fixnum (- code #x2c0)))))
       (handle-error)))
@@ -334,7 +334,7 @@ characters found in the Cyrillic alphabet."
             ((< code #xb0)
              (svref +unicode-a0-b0-to-iso-8859-5+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x400) (< code #x460))
+            ((<= #x400 code #x45f)
              (svref +unicode-400-460-to-iso-8859-5+
                     (the fixnum (- code #x400))))
             ;; the Numero sign
@@ -398,7 +398,7 @@ Arabic alphabet."
             ((< code #xb0)
              (svref +unicode-a0-b0-to-iso-8859-6+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x608) (< code #x658))
+            ((<= #x608 code #x657)
              (svref +unicode-608-658-to-iso-8859-6+
                     (the fixnum (- code #x608)))))
       (handle-error)))
@@ -472,13 +472,13 @@ characters found in the Greek alphabet."
             ((< code #xc0)
              (svref +unicode-a0-c0-to-iso-8859-7+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x378) (< code #x3d0))
+            ((<= #x378 code #x3cf)
              (svref +unicode-378-3d0-to-iso-8859-7+
                     (the fixnum (- code #x378))))
-            ((and (>= code #x2010) (< code #x2020))
+            ((<= #x2010 code #x201f)
              (svref +unicode-2010-2020-to-iso-8859-7+
                     (the fixnum (- code #x2010))))
-            ((and (>= code #x20ac) (< code #x20b0))
+            ((<= #x201c code #x20af)
              (svref +unicode-20ac-20b0-to-iso-8859-7+
                     (the fixnum (- code #x20ac)))))
       (handle-error)))
@@ -548,10 +548,10 @@ Hebrew alphabet."
             ((< code #xf8)
              (svref +unicode-a0-f8-to-iso-8859-8+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x5d0) (< code #x5f0))
+            ((<= #x5d0 code #x5ef)
              (svref +unicode-5d0-5f0-to-iso-8859-8+
                     (the fixnum (- code #x5d0))))
-            ((and (>= code #x2008) (< code #x2018))
+            ((<= #x2008 code #x201f)
              (svref +unicode-2008-2018-to-iso-8859-8+
                     (the fixnum (- code #x2008)))))
       (handle-error)))
@@ -617,7 +617,7 @@ characters found in the Turkish alphabet."
             ((< code #x100)
              (svref +unicode-d0-100-to-iso-8859-9+
                     (the fixnum (- code #xd0))))
-            ((and (>= code #x118) (< code #x160))
+            ((<= #x118 code #x15f)
              (svref +unicode-118-160-to-iso-8859-9+
                     (the fixnum (- code #x118)))))
       (handle-error)))
@@ -784,8 +784,7 @@ characters found in Baltic alphabets."
             ((< code #x180)
              (svref +unicode-a0-180-to-iso-8859-13+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x2018)
-                  (< code #x2020))
+            ((<= #x2018 code #x201f)
              (svref +unicode-2018-2020-to-iso-8859-13+
                     (the fixnum (- code #x2018)))))
       (handle-error)))
@@ -880,16 +879,16 @@ characters found in Celtic languages."
             ((< code #x100)
              (svref +unicode-a0-100-to-iso-8859-14+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x108) (< code #x128))
+            ((<= #x108 code #x127)
              (svref +unicode-108-128-to-iso-8859-14+
                     (the fixnum (- code #x108))))
-            ((and (>= code #x170) (< code #x180))
+            ((<= #x170 code #x17f)
              (svref +unicode-170-180-to-iso-8859-14+
                     (the fixnum (- code #x170))))
-            ((and (>= code #x1e00) (< code #x1e88))
+            ((<= #x1e00 code #x1e87)
              (svref +unicode-1e00-1e88-to-iso-8859-14+
                     (the fixnum (- code #x1e00))))
-            ((and (>= code #x1ef0) (< code #x1ef8))
+            ((<= #x1ef0 code #x1ef7)
              (svref +unicode-1ef0-1ef8-to-iso-8859-14+
                     (the fixnum (- code #x1ef0)))))
       (handle-error)))
@@ -958,9 +957,10 @@ Euro sign and some other characters missing from ISO-8859-1."
             ((< code #x100)
              (svref +unicode-a0-100-to-iso-8859-15+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x150) (< code #x180))
+            ((<= #x150 code #x1f7)
              (svref +unicode-150-180-to-iso-8859-15+
                     (the fixnum (- code #x150))))
+            ;; Euro sign
             ((= code #x20ac) #xa4))
       (handle-error)))
 
@@ -1046,12 +1046,13 @@ characters found in Southeast European languages."
             ((< code #x180)
              (svref +unicode-a0-180-to-iso-8859-16+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x218) (< code #x220))
+            ((<= #x218 code #x21f)
              (svref +unicode-218-220-to-iso-8859-16+
                     (the fixnum (- code #x218))))
-            ((and (>= code #x2018) (< code #x2020))
+            ((< #x2018 code #x201f)
              (svref +unicode-2018-2020-to-iso-8859-16+
                     (the fixnum (- code #x2018))))
+            ;; Euro sign
             ((= code #x20ac) #xa4))
       (handle-error)))
 
