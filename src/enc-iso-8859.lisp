@@ -270,7 +270,7 @@ characters found in most languages used in Northern Europe."
             ((< code #x180)
              (svref +unicode-a0-180-to-iso-8859-4+
                     (the fixnum (- code #xa0))))
-            ((and (>= code #x2d8) (< code #x2e0))
+            ((and (>= code #x2c0) (< code #x2e0))
              (svref +unicode-2c0-2e0-to-iso-8859-4+
                     (the fixnum (- code #x2c0)))))
       (handle-error)))
