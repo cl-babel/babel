@@ -648,10 +648,10 @@ characters found in Nordic alphabets."
   :literal-char-code-limit #xa0)
 
 (define-constant +unicode-a0-180-to-iso-8859-10+
-    #(#xa0 nil nil nil nil nil nil #xa7 ; #xa0-#xa7
-      nil nil nil nil nil #xad nil nil  ; #xa8-#xaf
-      #xb0 nil nil nil nil nil nil #xb7 ; #xb0-#xb7
-      nil nil nil nil nil nil nil nil   ; #xb8-#xbf
+    #(#xa0 nil nil nil nil nil nil #xa7  ; #xa0-#xa7
+      nil nil nil nil nil #xad nil nil   ; #xa8-#xaf
+      #xb0 nil nil nil nil nil nil #xb7  ; #xb0-#xb7
+      nil nil nil nil nil #x2015 nil nil ; #xb8-#xbf
       nil #xc1 #xc2 #xc3 #xc4 #xc5 #xc6 nil ; #xc0-#xc7
       nil #xc9 nil #xcb nil #xcd #xce #xcf  ; #xc8-#xcf
       #xd0 nil nil #xd3 #xd4 #xd5 #xd6 nil  ; #xd0-#xd7
@@ -682,7 +682,9 @@ characters found in Nordic alphabets."
   (or (cond ((< code #xa0) code)
             ((< code #x180)
              (svref +unicode-a0-180-to-iso-8859-10+
-                    (the fixnum (- code #xa0)))))
+                    (the fixnum (- code #xa0))))
+            ;; Horizontal bar
+            ((= code #x2015) #xbd))
       (handle-error)))
 
 (define-constant +iso-8859-10-to-unicode+
