@@ -103,10 +103,10 @@ Europe."
   (or (cond ((< code #xa0) code)
             ((< code #x180)
              (svref +unicode-00a0-0180-to-iso-8859-2+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x2c0 code #x2df)
              (svref +unicode-02c0-02e0-to-iso-8859-2+
-                    (the fixnum (- code #x2c0)))))
+                    (the ub8 (- code #x2c0)))))
       (handle-error)))
 
 (define-constant +iso-8859-2-to-unicode+
@@ -133,7 +133,7 @@ Europe."
 (define-unibyte-decoder :iso-8859-2 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-2-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-2-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-3
     "An 8-bit, fixed-width character encoding in which codes
@@ -184,13 +184,13 @@ characters found in most languages used in Southern Europe."
   (or (cond ((< code #xa0) code)
             ((< code #x100)
              (svref +unicode-a0-100-to-iso-8859-3+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x108 code #x17f)
              (svref +unicode-108-180-to-iso-8859-3+
-                    (the fixnum (- code #x108))))
+                    (the ub8 (- code #x108))))
             ((<= #x2d8 code #x2df)
              (svref +unicode-2d8-2e0-to-iso-8859-3+
-                    (the fixnum (- code #x2d8)))))
+                    (the ub8 (- code #x2d8)))))
       (handle-error)))
 
 (define-constant +iso-8859-3-to-unicode+
@@ -217,7 +217,7 @@ characters found in most languages used in Southern Europe."
 (define-unibyte-decoder :iso-8859-3 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-3-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-3-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-4
     "An 8-bit, fixed-width character encoding in which codes
@@ -269,10 +269,10 @@ characters found in most languages used in Northern Europe."
   (or (cond ((< code #xa0) code)
             ((< code #x180)
              (svref +unicode-a0-180-to-iso-8859-4+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x2c0 code #x2df)
              (svref +unicode-2c0-2e0-to-iso-8859-4+
-                    (the fixnum (- code #x2c0)))))
+                    (the ub8 (- code #x2c0)))))
       (handle-error)))
 
 (define-constant +iso-8859-4-to-unicode+
@@ -299,7 +299,7 @@ characters found in most languages used in Northern Europe."
 (define-unibyte-decoder :iso-8859-4 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-4-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-4-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-5
     "An 8-bit, fixed-width character encoding in which codes
@@ -333,10 +333,10 @@ characters found in the Cyrillic alphabet."
   (or (cond ((< code #xa0) code)
             ((< code #xb0)
              (svref +unicode-a0-b0-to-iso-8859-5+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x400 code #x45f)
              (svref +unicode-400-460-to-iso-8859-5+
-                    (the fixnum (- code #x400))))
+                    (the ub8 (- code #x400))))
             ;; the Numero sign
             ((= code #x2116) #xf0))
       (handle-error)))
@@ -365,7 +365,7 @@ characters found in the Cyrillic alphabet."
 (define-unibyte-decoder :iso-8859-5 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-5-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-5-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-6
     "An 8-bit, fixed-width character encoding in which codes #x00-#x9f
@@ -397,10 +397,10 @@ Arabic alphabet."
   (or (cond ((< code #xa0) code)
             ((< code #xb0)
              (svref +unicode-a0-b0-to-iso-8859-6+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x608 code #x657)
              (svref +unicode-608-658-to-iso-8859-6+
-                    (the fixnum (- code #x608)))))
+                    (the ub8 (- code #x608)))))
       (handle-error)))
 
 (define-constant +iso-8859-6-to-unicode+
@@ -427,7 +427,7 @@ Arabic alphabet."
 (define-unibyte-decoder :iso-8859-6 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-6-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-6-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-7
     "An 8-bit, fixed-width character encoding in which codes
@@ -471,16 +471,16 @@ characters found in the Greek alphabet."
   (or (cond ((< code #xa0) code)
             ((< code #xc0)
              (svref +unicode-a0-c0-to-iso-8859-7+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x378 code #x3cf)
              (svref +unicode-378-3d0-to-iso-8859-7+
-                    (the fixnum (- code #x378))))
+                    (the ub8 (- code #x378))))
             ((<= #x2010 code #x201f)
              (svref +unicode-2010-2020-to-iso-8859-7+
-                    (the fixnum (- code #x2010))))
+                    (the ub8 (- code #x2010))))
             ((<= #x201c code #x20af)
              (svref +unicode-20ac-20b0-to-iso-8859-7+
-                    (the fixnum (- code #x20ac)))))
+                    (the ub8 (- code #x20ac)))))
       (handle-error)))
 
 (define-constant +iso-8859-7-to-unicode+
@@ -507,7 +507,7 @@ characters found in the Greek alphabet."
 (define-unibyte-decoder :iso-8859-7 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-7-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-7-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-8
     "An 8-bit, fixed-width character encoding in which codes #x00-#x9f
@@ -547,13 +547,13 @@ Hebrew alphabet."
   (or (cond ((< code #xa0) code)
             ((< code #xf8)
              (svref +unicode-a0-f8-to-iso-8859-8+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x5d0 code #x5ef)
              (svref +unicode-5d0-5f0-to-iso-8859-8+
-                    (the fixnum (- code #x5d0))))
+                    (the ub8 (- code #x5d0))))
             ((<= #x2008 code #x201f)
              (svref +unicode-2008-2018-to-iso-8859-8+
-                    (the fixnum (- code #x2008)))))
+                    (the ub8 (- code #x2008)))))
       (handle-error)))
 
 (define-constant +iso-8859-8-to-unicode+
@@ -580,7 +580,7 @@ Hebrew alphabet."
 (define-unibyte-decoder :iso-8859-8 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-8-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-8-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-9
     "An 8-bit, fixed-width character encoding in which codes
@@ -616,10 +616,10 @@ characters found in the Turkish alphabet."
   (or (cond ((< code #xd0) code)
             ((< code #x100)
              (svref +unicode-d0-100-to-iso-8859-9+
-                    (the fixnum (- code #xd0))))
+                    (the ub8 (- code #xd0))))
             ((<= #x118 code #x15f)
              (svref +unicode-118-160-to-iso-8859-9+
-                    (the fixnum (- code #x118)))))
+                    (the ub8 (- code #x118)))))
       (handle-error)))
 
 (define-constant +iso-8859-9-to-unicode+
@@ -637,7 +637,7 @@ characters found in the Turkish alphabet."
 (define-unibyte-decoder :iso-8859-9 (octet)
   (if (< octet #xd0)
       octet
-      (svref +iso-8859-9-to-unicode+ (the fixnum (- octet #xd0)))))
+      (svref +iso-8859-9-to-unicode+ (the ub8 (- octet #xd0)))))
 
 (define-character-encoding :iso-8859-10
     "An 8-bit, fixed-width character encoding in which codes
@@ -682,7 +682,7 @@ characters found in Nordic alphabets."
   (or (cond ((< code #xa0) code)
             ((< code #x180)
              (svref +unicode-a0-180-to-iso-8859-10+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ;; Horizontal bar
             ((= code #x2015) #xbd))
       (handle-error)))
@@ -711,7 +711,7 @@ characters found in Nordic alphabets."
 (define-unibyte-decoder :iso-8859-10 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-10-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-10-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-11
     "An 8-bit, fixed-width character encoding in which codes
@@ -783,10 +783,10 @@ characters found in Baltic alphabets."
   (or (cond ((< code #xa0) code)
             ((< code #x180)
              (svref +unicode-a0-180-to-iso-8859-13+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x2018 code #x201f)
              (svref +unicode-2018-2020-to-iso-8859-13+
-                    (the fixnum (- code #x2018)))))
+                    (the ub8 (- code #x2018)))))
       (handle-error)))
 
 (define-constant +iso-8859-13-to-unicode+
@@ -813,7 +813,7 @@ characters found in Baltic alphabets."
 (define-unibyte-decoder :iso-8859-13 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-13-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-13-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-14
     "An 8-bit, fixed-width character encoding in which codes
@@ -878,19 +878,19 @@ characters found in Celtic languages."
   (or (cond ((< code #xa0) code)
             ((< code #x100)
              (svref +unicode-a0-100-to-iso-8859-14+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x108 code #x127)
              (svref +unicode-108-128-to-iso-8859-14+
-                    (the fixnum (- code #x108))))
+                    (the ub8 (- code #x108))))
             ((<= #x170 code #x17f)
              (svref +unicode-170-180-to-iso-8859-14+
-                    (the fixnum (- code #x170))))
+                    (the ub8 (- code #x170))))
             ((<= #x1e00 code #x1e87)
              (svref +unicode-1e00-1e88-to-iso-8859-14+
-                    (the fixnum (- code #x1e00))))
+                    (the ub8 (- code #x1e00))))
             ((<= #x1ef0 code #x1ef7)
              (svref +unicode-1ef0-1ef8-to-iso-8859-14+
-                    (the fixnum (- code #x1ef0)))))
+                    (the ub8 (- code #x1ef0)))))
       (handle-error)))
 
 (define-constant +iso-8859-14-to-unicode+
@@ -917,7 +917,7 @@ characters found in Celtic languages."
 (define-unibyte-decoder :iso-8859-14 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-14-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-14-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-15
     "An 8-bit, fixed-width character encoding in which codes
@@ -956,10 +956,10 @@ Euro sign and some other characters missing from ISO-8859-1."
   (or (cond ((< code #xa0) code)
             ((< code #x100)
              (svref +unicode-a0-100-to-iso-8859-15+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x150 code #x1f7)
              (svref +unicode-150-180-to-iso-8859-15+
-                    (the fixnum (- code #x150))))
+                    (the ub8 (- code #x150))))
             ;; Euro sign
             ((= code #x20ac) #xa4))
       (handle-error)))
@@ -992,7 +992,7 @@ Euro sign and some other characters missing from ISO-8859-1."
 (define-unibyte-decoder :iso-8859-15 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-15-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-15-to-unicode+ (the ub8 (- octet #xa0)))))
 
 (define-character-encoding :iso-8859-16
     "An 8-bit, fixed-width character encoding in which codes
@@ -1045,13 +1045,13 @@ characters found in Southeast European languages."
   (or (cond ((< code #xa0) code)
             ((< code #x180)
              (svref +unicode-a0-180-to-iso-8859-16+
-                    (the fixnum (- code #xa0))))
+                    (the ub8 (- code #xa0))))
             ((<= #x218 code #x21f)
              (svref +unicode-218-220-to-iso-8859-16+
-                    (the fixnum (- code #x218))))
+                    (the ub8 (- code #x218))))
             ((< #x2018 code #x201f)
              (svref +unicode-2018-2020-to-iso-8859-16+
-                    (the fixnum (- code #x2018))))
+                    (the ub8 (- code #x2018))))
             ;; Euro sign
             ((= code #x20ac) #xa4))
       (handle-error)))
@@ -1080,4 +1080,4 @@ characters found in Southeast European languages."
 (define-unibyte-decoder :iso-8859-16 (octet)
   (if (< octet #xa0)
       octet
-      (svref +iso-8859-16-to-unicode+ (the fixnum (- octet #xa0)))))
+      (svref +iso-8859-16-to-unicode+ (the ub8 (- octet #xa0)))))
