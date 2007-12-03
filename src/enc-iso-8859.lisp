@@ -336,7 +336,9 @@ characters found in the Cyrillic alphabet."
                     (the fixnum (- code #xa0))))
             ((and (>= code #x400) (< code #x460))
              (svref +unicode-400-460-to-iso-8859-5+
-                    (the fixnum (- code #x400)))))
+                    (the fixnum (- code #x400))))
+            ;; the Numero sign
+            ((= code #x2116) #xf0))
       (handle-error)))
 
 (define-constant +iso-8859-5-to-unicode+
