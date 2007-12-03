@@ -265,10 +265,24 @@
   (let ((octets (ub8 256)))
     (dotimes (i 256)
       (setf (aref octets i) i))
-    (let* ((str (octets-to-string octets :encoding enc))
-           (oct2 (string-to-octets str :encoding enc)))
-      (and (= (length octets) (length oct2))
-           (every #'= octets oct2)))))
+    (let* ((str (octets-to-string octets :encoding enc)))
+      ;; remove the undefined code-points because they translate
+      ;; to #xFFFD and string-to-octets raises an error when
+      ;; encoding #xFFFD
+      (multiple-value-bind (filtered-str filtered-octets)
+          (let ((s (make-array 0 :element-type 'character
+                               :adjustable t :fill-pointer 0))
+                (o (make-array 0 :element-type '(unsigned-byte 16)
+                               :adjustable t :fill-pointer 0)))
+            (loop :for i :below 256
+                  :for c := (aref str i)
+                  :when (/= (char-code c) #xFFFD)
+                  :do (vector-push-extend c s)
+                      (vector-push-extend (aref octets i) o))
+            (values s o))
+        (let ((oct2 (string-to-octets filtered-str :encoding enc)))
+          (and (= (length filtered-octets) (length oct2))
+               (every #'= filtered-octets oct2)))))))
 
 (defparameter *iso-8859-charsets*
   '(:iso-8859-1 :iso-8859-2 :iso-8859-3 :iso-8859-4 :iso-8859-5 :iso-8859-6
