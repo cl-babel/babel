@@ -275,11 +275,11 @@
                                :adjustable t :fill-pointer 0))
                 (o (make-array 0 :element-type '(unsigned-byte 16)
                                :adjustable t :fill-pointer 0)))
-            (loop :for i :below 256
-                  :for c := (aref str i)
-                  :when (/= (char-code c) #xFFFD)
-                  :do (vector-push-extend c s)
-                      (vector-push-extend (aref octets i) o))
+            (loop for i below 256
+                  for c = (aref str i)
+                  when (/= (char-code c) #xFFFD)
+                  do (vector-push-extend c s)
+                     (vector-push-extend (aref octets i) o))
             (values s o))
         (let ((oct2 (string-to-octets filtered-str :encoding enc)))
           (and (= (length filtered-octets) (length oct2))
