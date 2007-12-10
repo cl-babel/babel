@@ -44,4 +44,11 @@
      (:file "external-format")
      #-openmcl (:file "fix-sharp-backslash")))))
 
+(defmethod perform ((o test-op) (c (eql (find-system :babel))))
+  (operate 'load-op :babel-tests)
+  (operate 'test-op :babel-tests))
+
+(defmethod operation-done-p ((o test-op) (c (eql (find-system :babel))))
+  nil)
+
 ;;; vim: ft=lisp et

@@ -40,12 +40,15 @@
     ((:file "tests")))))
 
 (defun run-babel-tests (&key (compiled nil))
-  (funcall (intern (symbol-name '#:run-babel-tests) '#:babel-tests)
+  (funcall (intern (symbol-name '#:do-tests) '#:rt)
            :compiled compiled))
 
 (defmethod perform ((o test-op) (c (eql (find-system :babel-tests))))
   (unless (and (run-babel-tests :compiled nil)
                (run-babel-tests :compiled t))
     (error "test-op failed.")))
+
+(defmethod operation-done-p ((o test-op) (c (eql (find-system :babel-tests))))
+  nil)
 
 ;;; vim: ft=lisp et
