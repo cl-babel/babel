@@ -80,6 +80,7 @@
    #:unicode-string
    #:simple-unicode-string
    ;; external formats
+   #:external-format
    #:make-external-format
    #:ensure-external-format
    #:external-format-encoding
