@@ -32,11 +32,15 @@
   "The end-of-line style used by external formats if none is
 explicitly given.  Depends on the OS the code is compiled on.")
 
+(deftype eol-style ()
+  "Possible end-of-line styles."
+  '(member :cr :lf :crlf))
+
 (defclass external-format ()
-  ((encoding :initarg :encoding :reader external-format-encoding)
-   ;; one of :CR, :LF or :CRLF
+  ((encoding :initarg :encoding :reader external-format-encoding
+             :type character-encoding)
    (eol-style :initarg :eol-style :reader external-format-eol-style
-              :initform *default-eol-style*))
+              :type eol-style :initform *default-eol-style*))
   (:documentation
    "An EXTERNAL-FORMAT consists in a combination of a Babel
 CHARACTER-ENCODING and an end-of-line style."))
@@ -49,7 +53,8 @@ CHARACTER-ENCODING and an end-of-line style."))
 
 ;;; This interface is still somewhat sketchy.  The rest of Babel
 ;;; doesn't really understand external formats, for instance.
-(defun make-external-format (encoding &optional (eol-style *default-eol-style*))
+(defun make-external-format (encoding &key (eol-style *default-eol-style*))
+  (check-type eol-style eol-style)
   (make-instance 'external-format
                  :encoding (get-character-encoding encoding)
                  :eol-style eol-style))
@@ -59,7 +64,7 @@ CHARACTER-ENCODING and an end-of-line style."))
     (external-format thing)
     (character-encoding (make-instance 'external-format :encoding thing))
     (symbol (make-external-format thing))
-    (list (apply #'make-instance 'external-format :encoding thing))))
+    (list (apply #'make-external-format thing))))
 
 (defun external-format-equal (ef1 ef2)
   (and (eq (external-format-encoding ef1) (external-format-encoding ef2))
