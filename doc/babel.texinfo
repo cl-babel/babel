@@ -45,12 +45,44 @@
 
 @c Top Menu
 @menu
+* First Chapter::               
 * Comprehensive Index::         
 @end menu
 
+@node First Chapter
+@chapter First Chapter
 
-@c @node First Chapter
-@c @chapter First Chapter
+Bla bla bla, bla bla bla.
+
+@section Conditions
+
+@include include/condition-babel-character-out-of-range.texinfo
+@include include/condition-babel-encodings-character-out-of-range.texinfo
+@include include/condition-babel-encodings-end-of-input-in-character.texinfo
+@include include/condition-babel-encodings-invalid-utf8-continuation-byte.texinfo
+@include include/condition-babel-encodings-invalid-utf8-starter-byte.texinfo
+@include include/condition-babel-encodings-overlong-utf8-sequence.texinfo
+@include include/condition-babel-end-of-input-in-character.texinfo
+@include include/condition-babel-invalid-utf8-continuation-byte.texinfo
+@include include/condition-babel-invalid-utf8-starter-byte.texinfo
+@include include/condition-babel-overlong-utf8-sequence.texinfo
+@include include/constant-babel-unicode-char-code-limit.texinfo
+
+@section More stuff
+
+@include include/fun-babel-encodings-get-character-encoding.texinfo
+@include include/fun-babel-encodings-list-character-encodings.texinfo
+@include include/fun-babel-encodings-lookup-mapping.texinfo
+@include include/fun-babel-list-character-encodings.texinfo
+@include include/macro-babel-encodings-with-checked-simple-vector.texinfo
+@include include/macro-babel-encodings-with-simple-vector.texinfo
+@include include/type-babel-simple-unicode-string.texinfo
+@include include/type-babel-unicode-char.texinfo
+@include include/type-babel-unicode-string.texinfo
+@include include/var-babel-encodings-star-default-character-encoding-star.texinfo
+@include include/var-babel-encodings-star-suppress-character-coding-errors-star.texinfo
+@include include/var-babel-star-default-character-encoding-star.texinfo
+@include include/var-babel-star-default-eol-style-star.texinfo
 
 @c @include include/fun-somepackage-somefunction.texinfo
 @c @include include/macro-somepackage-somemacro.texinfo
