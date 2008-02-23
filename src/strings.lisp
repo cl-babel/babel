@@ -259,6 +259,9 @@ shouldn't attempt to modify V."
 ;;;   * specify target vector/string + offset
 ;;;   * documentation :)
 
+(declaim (inline octets-to-string string-to-octets string-size-in-octets
+                 vector-size-in-chars))
+
 (defun octets-to-string (vector &key (start 0) end
                          (errorp (not *suppress-character-coding-errors*))
                          (encoding *default-character-encoding*))
@@ -315,3 +318,6 @@ shouldn't attempt to modify V."
           (*suppress-character-coding-errors* (not errorp)))
       (when maxp (assert (plusp max)))
       (funcall (code-point-counter mapping) vector start end max))))
+
+(declaim (notinline octets-to-string string-to-octets string-size-in-octets
+                    vector-size-in-chars))
