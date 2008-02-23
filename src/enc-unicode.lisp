@@ -160,10 +160,7 @@ in 2 to 4 bytes."
                 (set-octet 2 (logior #x80 (f-logand #x3f (f-ash code -6))))
                 (set-octet 3 (logior #x80 (logand code #x3f)))
                 (incf di 4))))
-           ;; XXX: this return value is obviously wrong, but I'm
-           ;; leaving this in until either STRING-TO-OCTETS or some
-           ;; unit test catches it.
-           finally (return (the fixnum (- d-start di))))))
+           finally (return (the fixnum (- di d-start))))))
 
 (define-decoder :utf-8 (getter src-type setter dest-type)
   `(lambda (src start end dest d-start)
@@ -257,7 +254,7 @@ in 2 to 4 bytes."
                                     (handle-error 6 character-out-of-range)
                                     )))))))))))))
                 dest di))
-             finally (return (the fixnum (- d-start di)))))))
+             finally (return (the fixnum (- di d-start)))))))
 
 ;;;; UTF-8B
 
@@ -423,10 +420,7 @@ code points for each invalid byte."
                 (set-octet 2 (logior #x80 (f-logand #x3f (f-ash code -6))))
                 (set-octet 3 (logand #x3f code))
                 (incf di 4))))
-           ;; XXX: this return value is obviously wrong, but I'm
-           ;; leaving this in until either STRING-TO-OCTETS or some
-           ;; unit test catches it.
-           finally (return (the fixnum (- d-start di))))))
+           finally (return (the fixnum (- di d-start))))))
 
 (define-decoder :utf-8b (getter src-type setter dest-type)
   `(lambda (src start end dest d-start)
@@ -492,7 +486,7 @@ code points for each invalid byte."
                                        (encode-raw-octets 4)))))))
                             (t (encode-raw-octets 1)))
                           dest di)))
-             finally (return (the fixnum (- d-start di)))))))
+             finally (return (the fixnum (- di d-start)))))))
 
 ;;;; UTF-16
 
@@ -593,7 +587,7 @@ written in native byte-order with a leading byte-order mark."
                   (,setter (logior #xdc00 (f-logand high-bits #x3ff))
                            dest (+ di 2) 2)
                   (incf di 4)))
-           finally (return (the fixnum (- d-start di))))))
+           finally (return (the fixnum (- di d-start))))))
 
 (define-decoder :utf-16 (getter src-type setter dest-type)
   `(lambda (src start end dest d-start)
