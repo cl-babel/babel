@@ -260,7 +260,7 @@ shouldn't attempt to modify V."
 ;;;   * documentation :)
 
 (declaim (inline octets-to-string string-to-octets string-size-in-octets
-                 vector-size-in-chars))
+                 vector-size-in-chars concatenate-strings-to-octets))
 
 (defun octets-to-string (vector &key (start 0) end
                          (errorp (not *suppress-character-coding-errors*))
@@ -296,6 +296,29 @@ shouldn't attempt to modify V."
       (funcall (encoder mapping) string start end vector 0)
       vector)))
 
+(defun concatenate-strings-to-octets (encoding &rest strings)
+  "Optimized equivalent of
+\(string-to-octets \(apply #'concatenate 'string strings)
+                  :encoding encoding)"
+  (declare (dynamic-extent strings))
+  (let* ((mapping (lookup-string-vector-mapping encoding))
+         (octet-counter (octet-counter mapping))
+         (vector (make-array (the fixnum
+                               (reduce #'+ strings :key (lambda (string)
+                                                          (funcall octet-counter
+                                                                   string 0 (length string) -1))))
+                             :element-type '(unsigned-byte 8)))
+         (current-index 0))
+    (declare (type array-index current-index))
+    (dolist (string strings)
+      (check-type string string)
+      (with-checked-simple-vector ((string (coerce string 'unicode-string))
+                                   (start 0) (end (length string)))
+        (declare (type simple-unicode-string string))
+        (incf current-index
+              (funcall (encoder mapping) string start end vector current-index))))
+    vector))
+
 (defun string-size-in-octets (string &key (start 0) end (max -1 maxp)
                               (errorp (not *suppress-character-coding-errors*))
                               (encoding *default-character-encoding*))
@@ -320,4 +343,4 @@ shouldn't attempt to modify V."
       (funcall (code-point-counter mapping) vector start end max))))
 
 (declaim (notinline octets-to-string string-to-octets string-size-in-octets
-                    vector-size-in-chars))
+                    vector-size-in-chars concatenate-strings-to-octets))
