@@ -303,11 +303,13 @@ shouldn't attempt to modify V."
   (declare (dynamic-extent strings))
   (let* ((mapping (lookup-string-vector-mapping encoding))
          (octet-counter (octet-counter mapping))
-         (vector (make-array (the fixnum
-                               (reduce #'+ strings :key (lambda (string)
-                                                          (funcall octet-counter
-                                                                   string 0 (length string) -1))))
-                             :element-type '(unsigned-byte 8)))
+         (vector (make-array
+                  (the fixnum
+                    (reduce #'+ strings
+                            :key (lambda (string)
+                                   (funcall octet-counter
+                                            string 0 (length string) -1))))
+                  :element-type '(unsigned-byte 8)))
          (current-index 0))
     (declare (type array-index current-index))
     (dolist (string strings)
@@ -316,7 +318,8 @@ shouldn't attempt to modify V."
                                    (start 0) (end (length string)))
         (declare (type simple-unicode-string string))
         (incf current-index
-              (funcall (encoder mapping) string start end vector current-index))))
+              (funcall (encoder mapping)
+                       string start end vector current-index))))
     vector))
 
 (defun string-size-in-octets (string &key (start 0) end (max -1 maxp)
