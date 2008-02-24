@@ -40,8 +40,8 @@
      (:file "enc-ebcdic")
      (:file "enc-iso-8859")
      (:file "enc-unicode")
-     (:file "strings")
      (:file "external-format")
+     (:file "strings")
      #-openmcl (:file "fix-sharp-backslash")))))
 
 (defmethod perform ((o test-op) (c (eql (find-system :babel))))
