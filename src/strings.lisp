@@ -301,7 +301,7 @@ shouldn't attempt to modify V."
 \(string-to-octets \(apply #'concatenate 'string strings)
                   :encoding encoding)"
   (declare (dynamic-extent strings))
-  (let* ((mapping (lookup-string-vector-mapping encoding))
+  (let* ((mapping (lookup-mapping *string-vector-mappings* encoding))
          (octet-counter (octet-counter mapping))
          (vector (make-array
                   (the fixnum
