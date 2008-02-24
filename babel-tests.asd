@@ -40,8 +40,9 @@
     ((:file "tests")))))
 
 (defun run-babel-tests (&key (compiled nil))
-  (funcall (intern (symbol-name '#:do-tests) '#:rt)
-           :compiled compiled))
+  (let ((regression-test::*compile-tests* compiled)
+        (*package* (find-package '#:babel-tests)))
+    (funcall (intern (symbol-name '#:do-tests) '#:regression-test))))
 
 (defmethod perform ((o test-op) (c (eql (find-system :babel-tests))))
   (unless (and (run-babel-tests :compiled nil)
