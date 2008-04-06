@@ -39,15 +39,12 @@
     :components
     ((:file "tests")))))
 
-(defun run-babel-tests (&key (compiled nil))
-  (let ((regression-test::*compile-tests* compiled)
-        (*package* (find-package '#:babel-tests)))
-    (funcall (intern (symbol-name '#:do-tests) '#:regression-test))))
-
 (defmethod perform ((o test-op) (c (eql (find-system :babel-tests))))
-  (unless (and (run-babel-tests :compiled nil)
-               (run-babel-tests :compiled t))
-    (error "test-op failed.")))
+  (oos 'load-op :babel-tests)
+  (let ((runner (find-symbol (string '#:run) '#:babel-tests)))
+    (unless (and (funcall runner :compiled nil)
+                 (funcall runner :compiled t))
+      (error "test-op failed."))))
 
 (defmethod operation-done-p ((o test-op) (c (eql (find-system :babel-tests))))
   nil)

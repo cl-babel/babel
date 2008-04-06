@@ -27,8 +27,14 @@
 (in-package #:cl-user)
 
 (defpackage #:babel-tests
-  (:use #:common-lisp #:babel #:babel-encodings #:rtest))
+  (:use #:common-lisp #:babel #:babel-encodings #:rtest)
+  (:export #:run))
 (in-package #:babel-tests)
+
+(defun run (&key (compiled nil))
+  (let ((rtest::*compile-tests* compiled)
+        (*package* (find-package '#:babel-tests)))
+    (do-tests)))
 
 (defun ub8v (&rest contents)
   (make-array (length contents) :element-type '(unsigned-byte 8)
