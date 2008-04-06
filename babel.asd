@@ -42,7 +42,7 @@
      (:file "enc-unicode")
      (:file "external-format")
      (:file "strings")
-     #-openmcl (:file "fix-sharp-backslash")))))
+     #-(or ecl openmcl) (:file "fix-sharp-backslash")))))
 
 (defmethod perform ((o test-op) (c (eql (find-system :babel))))
   (operate 'load-op :babel-tests)
