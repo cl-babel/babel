@@ -117,6 +117,9 @@ are less than UNICODE-CHAR-CODE-LIMIT."
    :code-point-seq-getter string-get
    :code-point-seq-type simple-unicode-string))
 
+(defun lookup-string-vector-mapping (encoding)
+  (lookup-mapping *string-vector-mappings* encoding))
+
 ;;; debugging stuff, TODO: refactor
 
 #-(and)
@@ -269,7 +272,7 @@ shouldn't attempt to modify V."
   (with-checked-simple-vector ((vector vector) (start start) (end end))
     (declare (type (simple-array (unsigned-byte 8) (*)) vector))
     (let ((*suppress-character-coding-errors* (not errorp))
-          (mapping (lookup-mapping *string-vector-mappings* encoding)))
+          (mapping (lookup-string-vector-mapping encoding)))
       (multiple-value-bind (size new-end)
           (funcall (code-point-counter mapping) vector start end -1)
         (let ((string (make-string size :element-type 'unicode-char)))
@@ -289,7 +292,7 @@ shouldn't attempt to modify V."
                                (start start) (end end))
     (declare (type simple-unicode-string string))
     (let* ((*suppress-character-coding-errors* (not errorp))
-           (mapping (lookup-mapping *string-vector-mappings* encoding))
+           (mapping (lookup-string-vector-mapping encoding))
            (vector (make-array (the array-index
                                  (funcall (octet-counter mapping)
                                           string start end -1))
@@ -330,7 +333,7 @@ shouldn't attempt to modify V."
   (with-checked-simple-vector ((string (coerce string 'unicode-string))
                                (start start) (end end))
     (declare (type simple-unicode-string string))
-    (let ((mapping (lookup-mapping *string-vector-mappings* encoding))
+    (let ((mapping (lookup-string-vector-mapping encoding))
           (*suppress-character-coding-errors* (not errorp)))
       (when maxp (assert (plusp max)))
       (funcall (octet-counter mapping) string start end max))))
@@ -341,7 +344,7 @@ shouldn't attempt to modify V."
   (check-type vector (vector (unsigned-byte 8)))
   (with-checked-simple-vector ((vector vector) (start start) (end end))
     (declare (type (simple-array (unsigned-byte 8) (*)) vector))
-    (let ((mapping (lookup-mapping *string-vector-mappings* encoding))
+    (let ((mapping (lookup-string-vector-mapping encoding))
           (*suppress-character-coding-errors* (not errorp)))
       (when maxp (assert (plusp max)))
       (funcall (code-point-counter mapping) vector start end max))))
