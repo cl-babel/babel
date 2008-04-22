@@ -29,8 +29,12 @@
 ;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+;; STATUS
+;; - in-memory output streams support binary/bivalent/character element-types and file-position
+
 ;; TODO
-;; - filter-stream types that can wral a binary stream and turn it into a bivalent stream
+;; - filter-stream types/mixins that can wrap a binary stream and turn it into a bivalent/character stream
+;; - in-memory input streams with file-position similar to in-memory output streams
 
 (in-package :babel)
 
