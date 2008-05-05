@@ -8,6 +8,8 @@ LIST OF IDEAS AND TODO ITEMS FOR BABEL
   * Many more tests needed.
       - test invalid sequences.
       - use more interesting test files.
+      - test with big strings that when converted would need a array
+        with more than array-index-limit elements.
 
   * Implement more encodings. (ISO-8859-*, windows, CJK encodings, etc)
 
