@@ -290,8 +290,9 @@ shouldn't attempt to modify V."
     (declare (type simple-unicode-string string))
     (let* ((*suppress-character-coding-errors* (not errorp))
            (mapping (lookup-mapping *string-vector-mappings* encoding))
-           (vector (make-array (funcall (octet-counter mapping)
-                                        string start end -1)
+           (vector (make-array (the array-index
+                                 (funcall (octet-counter mapping)
+                                          string start end -1))
                                :element-type '(unsigned-byte 8))))
       (funcall (encoder mapping) string start end vector 0)
       vector)))
@@ -304,7 +305,7 @@ shouldn't attempt to modify V."
   (let* ((mapping (lookup-mapping *string-vector-mappings* encoding))
          (octet-counter (octet-counter mapping))
          (vector (make-array
-                  (the fixnum
+                  (the array-index
                     (reduce #'+ strings
                             :key (lambda (string)
                                    (funcall octet-counter
