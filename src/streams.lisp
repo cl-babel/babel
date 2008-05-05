@@ -103,7 +103,8 @@ manually."))
   (declare (optimize speed))
   nil)
 
-(defun make-in-memory-output-stream (&key (element-type :default))
+(defun make-in-memory-output-stream (&key (element-type :default)
+                                     (external-format *default-character-encoding*))
   "Returns a binary output stream which accepts objects of type ELEMENT-TYPE \(a subtype of OCTET) and makes available a sequence that contains the octes that were actually output."
   (declare (optimize speed))
   (when (eq element-type :bivalent)
@@ -113,7 +114,8 @@ manually."))
                           :element-type (ecase element-type
                                           (:default '(unsigned-byte 8))
                                           (character 'character)))
-                 :element-type element-type))
+                 :element-type element-type
+                 :external-format external-format))
 
 (defclass vector-stream ()
   ((vector :initarg :vector
