@@ -289,16 +289,20 @@ manually."))
           (vector-stream-vector stream))
     (setf (vector-stream-vector stream) (make-vector-stream-buffer))))
 
-(defmacro with-output-to-sequence ((var &key as-list (element-type '':default))
+(defmacro with-output-to-sequence ((var &key as-list (element-type '':default)
+                                        (external-format '*default-character-encoding*))
                                    &body body)
   "Creates an IN-MEMORY output stream, binds VAR to this stream and then executes the code in BODY.  The stream stores data of type ELEMENT-TYPE \(a subtype of OCTET). The stream is automatically closed on exit from WITH-OUTPUT-TO-SEQUENCE, no matter whether the exit is normal or abnormal. The return value of this macro is a vector \(or a list if AS-LIST is true) containing the octets that were sent to the stream within BODY."
-  `(let (,var)
-     (unwind-protect
-         (progn
-           (setq ,var (make-in-memory-output-stream :element-type ,element-type))
-           ,@body
-           (get-output-stream-sequence ,var :as-list ,as-list))
-       (when ,var (close ,var)))))
+  (multiple-value-bind (body declarations) (parse-body body)
+    `(let (,var)
+       ,@declarations
+       (unwind-protect
+            (progn
+              (setq ,var (make-in-memory-output-stream :element-type ,element-type
+                                                       :external-format ,external-format))
+              ,@body
+              (get-output-stream-sequence ,var :as-list ,as-list))
+         (when ,var (close ,var))))))
 
 ;;; Some utilities
 
