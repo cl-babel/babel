@@ -76,7 +76,7 @@
   ((element-type :initform :default ; which means bivalent
                  :initarg :element-type
                  :accessor element-type-of)
-   (external-format :initform *default-character-encoding*
+   (external-format :initform (ensure-external-format *default-character-encoding*)
                     :initarg :external-format
                     :accessor external-format-of)
    #+:cmu
@@ -128,11 +128,14 @@ manually."))
     (setf element-type :default))
   (make-instance 'vector-output-stream
                  :vector (make-vector-stream-buffer
-                          :element-type (ecase element-type
-                                          (:default '(unsigned-byte 8))
-                                          (character 'character)))
+                          :element-type (cond
+                                          ((equal element-type '(unsigned-byte 8)) element-type)
+                                          (t
+                                           (ecase element-type
+                                             (:default '(unsigned-byte 8))
+                                             (character 'character)))))
                  :element-type element-type
-                 :external-format external-format))
+                 :external-format (ensure-external-format external-format)))
 
 (defclass vector-stream ()
   ((vector :initarg :vector
