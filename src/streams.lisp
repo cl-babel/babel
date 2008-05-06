@@ -301,16 +301,17 @@ manually."))
                 :fill-pointer 0
                 :element-type element-type))
 
-(defmethod get-output-stream-sequence ((stream in-memory-output-stream) &key as-list)
+(defmethod get-output-stream-sequence ((stream in-memory-output-stream) &key (return-as 'vector))
   "Returns a vector containing, in order, all the octets that have been output to the IN-MEMORY stream STREAM. This operation clears any octets on STREAM, so the vector contains only those octets which have been output since the last call to GET-OUTPUT-STREAM-SEQUENCE or since the creation of the stream, whichever occurred most recently. If AS-LIST is true the return value is coerced to a list."
   (declare (optimize speed))
   (prog1
-      (if as-list
-          (coerce (vector-stream-vector stream) 'list)
-          (vector-stream-vector stream))
+      (ecase return-as
+        (vector (vector-stream-vector stream))
+        (string (octets-to-string (vector-stream-vector stream) :encoding (external-format-of stream)))
+        (list (coerce (vector-stream-vector stream) 'list)))
     (setf (vector-stream-vector stream) (make-vector-stream-buffer))))
 
-(defmacro with-output-to-sequence ((var &key as-list (element-type '':default)
+(defmacro with-output-to-sequence ((var &key (return-as ''vector) (element-type '':default)
                                         (external-format '*default-character-encoding*))
                                    &body body)
   "Creates an IN-MEMORY output stream, binds VAR to this stream and then executes the code in BODY.  The stream stores data of type ELEMENT-TYPE \(a subtype of OCTET). The stream is automatically closed on exit from WITH-OUTPUT-TO-SEQUENCE, no matter whether the exit is normal or abnormal. The return value of this macro is a vector \(or a list if AS-LIST is true) containing the octets that were sent to the stream within BODY."
@@ -322,5 +323,5 @@ manually."))
               (setq ,var (make-in-memory-output-stream :element-type ,element-type
                                                        :external-format ,external-format))
               ,@body
-              (get-output-stream-sequence ,var :as-list ,as-list))
+              (get-output-stream-sequence ,var :return-as ,return-as))
          (when ,var (close ,var))))))
