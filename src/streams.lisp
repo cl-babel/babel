@@ -53,7 +53,24 @@
 
 (declaim (inline check-if-open check-if-accepts-octets
           check-if-accepts-characters stream-accepts-characters?
-          stream-accepts-octets? vector-extend))
+          stream-accepts-octets? vector-extend extend-vector-output-stream-buffer))
+
+;;; Some utilities (on top due to inlining)
+
+(defun vector-extend (extension vector &key (start 0) (end (length extension)))
+  ;; copied over from cl-quasi-quote
+  (declare (optimize speed)
+           (type vector extension vector)
+           (type array-index start end))
+  (let* ((original-length (length vector))
+         (extension-length (- end start))
+         (new-length (+ original-length extension-length))
+         (original-dimension (array-dimension vector 0)))
+    (when (< original-dimension new-length)
+      (setf vector (adjust-array vector (max (* 2 original-dimension) new-length))))
+    (setf (fill-pointer vector) new-length)
+    (replace vector extension :start1 original-length :start2 start :end2 end)
+    vector))
 
 (defclass in-memory-stream (trivial-gray-stream-mixin)
   ((element-type :initform :default ; which means bivalent
@@ -230,6 +247,13 @@ manually."))
   (incf (vector-stream-index stream))
   byte)
 
+(defun extend-vector-output-stream-buffer (extension stream &key (start 0) (end (length extension)))
+  (declare (optimize speed)
+           (type vector extension))
+  (vector-extend extension (vector-stream-vector stream) :start start :end end)
+  (incf (vector-stream-index stream) (- end start))
+  (values))
+
 (defmethod stream-write-char ((stream vector-output-stream) char)
   (declare (optimize speed))
   (check-if-open stream)
@@ -239,13 +263,6 @@ manually."))
                                   :encoding (external-format-of stream))))
     (extend-vector-output-stream-buffer octets stream))
   char)
-
-(defun extend-vector-output-stream-buffer (extension stream &key (start 0) (end (length extension)))
-  (declare (optimize speed)
-           (type vector extension))
-  (vector-extend extension (vector-stream-vector stream) :start start :end end)
-  (incf (vector-stream-index stream) (- end start))
-  (values))
 
 (defmethod stream-write-sequence ((stream vector-output-stream) sequence start end &key)
   "Just calls VECTOR-PUSH-EXTEND repeatedly."
@@ -264,6 +281,10 @@ manually."))
            (assert (stream-accepts-characters? stream))
            (extend-vector-output-stream-buffer sequence stream :start start :end end))))
     ((vector (unsigned-byte 8))
+     ;; specialized branch to help inlining
+     (check-if-accepts-octets stream)
+     (extend-vector-output-stream-buffer sequence stream :start start :end end))
+    (vector
      (check-if-accepts-octets stream)
      (extend-vector-output-stream-buffer sequence stream :start start :end end)))
   sequence)
@@ -303,20 +324,3 @@ manually."))
               ,@body
               (get-output-stream-sequence ,var :as-list ,as-list))
          (when ,var (close ,var))))))
-
-;;; Some utilities
-
-(defun vector-extend (extension vector &key (start 0) (end (length extension)))
-  ;; copied over from cl-quasi-quote
-  (declare (optimize speed)
-           (type vector extension vector)
-           (type array-index start end))
-  (let* ((original-length (length vector))
-         (extension-length (- end start))
-         (new-length (+ original-length extension-length))
-         (original-dimension (array-dimension vector 0)))
-    (when (< original-dimension new-length)
-      (setf vector (adjust-array vector (max (* 2 original-dimension) new-length))))
-    (setf (fill-pointer vector) new-length)
-    (replace vector extension :start1 original-length :start2 start :end2 end)
-    vector))
