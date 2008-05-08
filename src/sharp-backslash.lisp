@@ -1,6 +1,6 @@
 ;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; fix-sharp-backslash.lisp --- Alternative #\ dispatch code.
+;;; sharp-backslash.lisp --- Alternative #\ dispatch code.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
@@ -24,32 +24,24 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(in-package #:babel-encodings)
-
-(defun signal-reader-error (stream thing)
-  (error #-clisp 'reader-error #+clisp 'sys::simple-reader-error
-         :stream stream
-         :format-control "Unrecognized character name: u~A"
-         :format-arguments (list thing)))
-
-(defvar *original-sharp-backslash* (get-dispatch-macro-character #\# #\\))
+(in-package #:babel)
 
 #-allegro
-(defun sharp-backslash (stream backslash numarg)
+(defun sharp-backslash-reader (original-sharp-backslash-reader stream char numarg)
   (let ((1st-char (read-char stream)))
     (if (and (char-equal 1st-char #\u)
              ;; because #\z is not a digit char...
              (digit-char-p (peek-char nil stream nil #\z) 16))
         ;; something better than READ would be nice here
         (let ((token (let ((*read-base* 16)) (read stream))))
-          (if (typep token 'code-point)
+          (if (typep token 'babel-encodings::code-point)
               (code-char token)
-              (signal-reader-error stream token)))
-        (funcall *original-sharp-backslash*
+              (simple-reader-error stream "Unrecognized character name: u~A" token)))
+        (funcall original-sharp-backslash-reader
                  (make-concatenated-stream (make-string-input-stream
                                             (string 1st-char))
                                            stream)
-                 backslash
+                 char
                  numarg))))
 
 ;;; Allegro's PEEK-CHAR seems broken in some situations, and the code
@@ -58,7 +50,7 @@
 ;;; twice, very weird.  This is the best workaround I could think of.
 ;;; It sucks.
 #+allegro
-(defun sharp-backslash (stream backslash numarg)
+(defun sharp-backslash-reader (original-sharp-backslash-reader stream char numarg)
   (let* ((1st-char (read-char stream))
          (rest (ignore-errors (excl::read-extended-token stream)))
          (code (when (and rest (char-equal 1st-char #\u))
@@ -69,6 +61,19 @@
             (s (concatenate 'string "#\\" (string 1st-char) rest))
           (read-char s)
           (read-char s)
-          (funcall *original-sharp-backslash* s backslash numarg)))))
+          (funcall original-sharp-backslash-reader s char numarg)))))
 
-(set-dispatch-macro-character #\# #\\ #'sharp-backslash)
+(defun make-sharp-backslash-reader ()
+  (let ((original-sharp-backslash (get-dispatch-macro-character #\# #\\)))
+    (lambda (stream char numarg)
+      (sharp-backslash-reader original-sharp-backslash stream char numarg))))
+
+(defmacro enable-sharp-backslash-syntax ()
+  `(eval-when (:compile-toplevel :execute)
+     (setf *readtable* (copy-readtable *readtable*))
+     (set-sharp-backslash-syntax-in-readtable)
+     (values)))
+
+(defun set-sharp-backslash-syntax-in-readtable ()
+  (set-dispatch-macro-character #\# #\\ (make-sharp-backslash-reader))
+  (values))

@@ -79,6 +79,9 @@
    #:unicode-char-code-limit
    #:unicode-string
    #:simple-unicode-string
+   ;; fixed sharp-backslash reader
+   #:enable-sharp-backslash-syntax
+   #:set-sharp-backslash-syntax-in-readtable
    ;; external formats
    #:external-format
    #:make-external-format
