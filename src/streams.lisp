@@ -122,19 +122,26 @@ manually."))
   nil)
 
 (defun make-in-memory-output-stream (&key (element-type :default)
-                                     (external-format *default-character-encoding*))
+                                     external-format
+                                     initial-buffer-size)
   "Returns a binary output stream which accepts objects of type ELEMENT-TYPE \(a subtype of OCTET) and makes available a sequence that contains the octes that were actually output."
   (declare (optimize speed))
+  (unless external-format
+    (setf external-format *default-character-encoding*))
   (when (eq element-type :bivalent)
     (setf element-type :default))
   (make-instance 'vector-output-stream
                  :vector (make-vector-stream-buffer
                           :element-type (cond
-                                          ((equal element-type '(unsigned-byte 8)) element-type)
-                                          (t
-                                           (ecase element-type
-                                             (:default '(unsigned-byte 8))
-                                             (character 'character)))))
+                                          ((or (eq element-type :default)
+                                               (equal element-type '(unsigned-byte 8)))
+                                           '(unsigned-byte 8))
+                                          ((eq element-type 'character)
+                                           'character)
+                                          ((subtypep element-type '(unsigned-byte 8))
+                                           '(unsigned-byte 8))
+                                          (t (error "Illegal element-type ~S" element-type)))
+                          :initial-size initial-buffer-size)
                  :element-type element-type
                  :external-format (ensure-external-format external-format)))
 
@@ -253,6 +260,7 @@ manually."))
 
 (defun extend-vector-output-stream-buffer (extension stream &key (start 0) (end (length extension)))
   (declare (optimize speed)
+           (type array-index start end)
            (type vector extension))
   (vector-extend extension (vector-stream-vector stream) :start start :end end)
   (incf (vector-stream-index stream) (- end start))
@@ -298,12 +306,14 @@ manually."))
   (declare (optimize speed))
   (vector-stream-index stream))
 
-(defun make-vector-stream-buffer (&key (element-type '(unsigned-byte 8)))
+(defun make-vector-stream-buffer (&key (element-type '(unsigned-byte 8)) initial-size)
   "Creates and returns an array which can be used as the underlying vector for a VECTOR-OUTPUT-STREAM."
-  (declare (optimize speed))
-  (make-array 0 :adjustable t
-                :fill-pointer 0
-                :element-type element-type))
+  (declare (optimize speed)
+           (type array-index initial-size))
+  (make-array (or initial-size 32)
+              :adjustable t
+              :fill-pointer 0
+              :element-type element-type))
 
 (defmethod get-output-stream-sequence ((stream in-memory-output-stream) &key (return-as 'vector))
   "Returns a vector containing, in order, all the octets that have been output to the IN-MEMORY stream STREAM. This operation clears any octets on STREAM, so the vector contains only those octets which have been output since the last call to GET-OUTPUT-STREAM-SEQUENCE or since the creation of the stream, whichever occurred most recently. If AS-LIST is true the return value is coerced to a list."
@@ -316,7 +326,8 @@ manually."))
     (setf (vector-stream-vector stream) (make-vector-stream-buffer))))
 
 (defmacro with-output-to-sequence ((var &key (return-as ''vector) (element-type '':default)
-                                        (external-format '*default-character-encoding*))
+                                        (external-format '*default-character-encoding*)
+                                        initial-buffer-size)
                                    &body body)
   "Creates an IN-MEMORY output stream, binds VAR to this stream and then executes the code in BODY.  The stream stores data of type ELEMENT-TYPE \(a subtype of OCTET). The stream is automatically closed on exit from WITH-OUTPUT-TO-SEQUENCE, no matter whether the exit is normal or abnormal. The return value of this macro is a vector \(or a list if AS-LIST is true) containing the octets that were sent to the stream within BODY."
   (multiple-value-bind (body declarations) (parse-body body)
@@ -325,7 +336,8 @@ manually."))
        (unwind-protect
             (progn
               (setq ,var (make-in-memory-output-stream :element-type ,element-type
-                                                       :external-format ,external-format))
+                                                       :external-format ,external-format
+                                                       :initial-buffer-size ,initial-buffer-size))
               ,@body
               (get-output-stream-sequence ,var :return-as ,return-as))
          (when ,var (close ,var))))))
