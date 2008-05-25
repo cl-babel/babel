@@ -309,8 +309,8 @@ manually."))
 (defun make-vector-stream-buffer (&key (element-type '(unsigned-byte 8)) initial-size)
   "Creates and returns an array which can be used as the underlying vector for a VECTOR-OUTPUT-STREAM."
   (declare (optimize speed)
-           (type array-index initial-size))
-  (make-array (or initial-size 32)
+           (type (or null array-index) initial-size))
+  (make-array (the array-index (or initial-size 32))
               :adjustable t
               :fill-pointer 0
               :element-type element-type))
