@@ -258,7 +258,6 @@ shouldn't attempt to modify V."
 ;;; Future features these functions should have:
 ;;;
 ;;;   * null-terminate
-;;;   * use-bom
 ;;;   * specify target vector/string + offset
 ;;;   * documentation :)
 
@@ -279,25 +278,37 @@ shouldn't attempt to modify V."
           (funcall (decoder mapping) vector start new-end string 0)
           string)))))
 
+(defun bom-vector (encoding use-bom)
+  (check-type use-bom (member :default t nil))
+  (if (null use-bom)
+      #()
+      (let ((enc (get-character-encoding encoding)))
+        (if (or (eq use-bom t)
+                (and (eq use-bom :default) (enc-use-bom enc)))
+            (enc-bom-encoding enc)
+            #()))))
+
 ;;; FIXME: we shouldn't really need that coercion to UNICODE-STRING
 ;;; but we kind of because it's declared all over.  To avoid that,
 ;;; we'd need different types for input and output strings.  Or maybe
 ;;; this is not a problem; figure that out.
 (defun string-to-octets (string &key (encoding *default-character-encoding*)
-                         (start 0) end null-terminate
+                         (start 0) end (use-bom :default)
                          (errorp (not *suppress-character-coding-errors*)))
-  (declare (ignore null-terminate))
   (check-type string string)
   (with-checked-simple-vector ((string (coerce string 'unicode-string))
                                (start start) (end end))
     (declare (type simple-unicode-string string))
     (let* ((*suppress-character-coding-errors* (not errorp))
            (mapping (lookup-string-vector-mapping encoding))
+           (bom (bom-vector encoding use-bom))
            (vector (make-array (the array-index
-                                 (funcall (octet-counter mapping)
-                                          string start end -1))
+                                 (+ (funcall (octet-counter mapping)
+                                             string start end -1)
+                                    (length bom)))
                                :element-type '(unsigned-byte 8))))
-      (funcall (encoder mapping) string start end vector 0)
+      (replace vector bom)
+      (funcall (encoder mapping) string start end vector (length bom))
       vector)))
 
 (defun concatenate-strings-to-octets (encoding &rest strings)
