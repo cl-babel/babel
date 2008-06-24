@@ -24,15 +24,9 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(defpackage #:babel-tests-system
-  (:use #:cl #:asdf))
-(in-package #:babel-tests-system)
-
-(defvar *tests-dir* (append (pathname-directory *load-truename*) '("tests")))
-
 (defsystem babel-tests
   :description "Unit tests for Babel."
-  :depends-on (babel rt)
+  :depends-on (babel stefil)
   :components
   ((:module "tests"
     :serial t
@@ -40,11 +34,7 @@
     ((:file "tests")))))
 
 (defmethod perform ((o test-op) (c (eql (find-system :babel-tests))))
-  (oos 'load-op :babel-tests)
-  (let ((runner (find-symbol (string '#:run) '#:babel-tests)))
-    (unless (and (funcall runner :compiled nil)
-                 (funcall runner :compiled t))
-      (error "test-op failed."))))
+  (funcall (intern (string '#:run-tests) '#:babel-tests)))
 
 (defmethod operation-done-p ((o test-op) (c (eql (find-system :babel-tests))))
   nil)

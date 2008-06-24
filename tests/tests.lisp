@@ -2,7 +2,7 @@
 ;;;
 ;;; tests.lisp --- Unit and regression tests for Babel.
 ;;;
-;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
+;;; Copyright (C) 2007-2008, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person
 ;;; obtaining a copy of this software and associated documentation
@@ -25,120 +25,145 @@
 ;;; DEALINGS IN THE SOFTWARE.
 
 (in-package #:cl-user)
-
 (defpackage #:babel-tests
-  (:use #:common-lisp #:babel #:babel-encodings #:rtest)
-  (:export #:run))
-
+  (:use #:common-lisp #:babel #:babel-encodings #:stefil))
 (in-package #:babel-tests)
 
-(enable-sharp-backslash-syntax)
+(defun run-tests ()
+  (funcall-test-with-feedback-message 'babel-tests))
 
-(defun run (&key (compiled nil))
-  (let ((rtest::*compile-tests* compiled)
-        (*package* (find-package '#:babel-tests)))
-    (do-tests)))
+(in-root-suite)
+(defsuite* babel-tests)
 
 (defun ub8v (&rest contents)
   (make-array (length contents) :element-type '(unsigned-byte 8)
               :initial-contents contents))
 
-(defun ub8 (size)
+(defun make-ub8-vector (size)
   (make-array size :element-type '(unsigned-byte 8)
               :initial-element 0))
 
+(defmacro returns (form &rest values)
+  "Asserts, through EQUALP, that FORM returns VALUES."
+  `(is (equalp (multiple-value-list ,form) (list ,@values))))
+
+(defmacro defstest (name form &body return-values)
+  "Similar to RT's DEFTEST."
+  `(deftest ,name ()
+     (returns ,form ,@(mapcar (lambda (x) `',x) return-values))))
+
+(defmacro signals* (form &body clauses)
+  `(handler-case ,form
+     ,@clauses
+     (:no-error (result)
+       (declare (ignore result))
+       ;; it'd be nice if the failture described what FORM returned.
+       (stefil::record-failure 'stefil::missing-condition
+                               :form ',form
+                               :condition ',(mapcar #'car clauses)))))
+
+(defun fail (control-string &rest arguments)
+  (stefil::record-failure 'stefil::failed-assertion
+                          :format-control control-string
+                          :format-arguments arguments))
+
+(defun expected (expected &key got)
+  (fail "expected ~A, got ~A instead" expected got))
+
+(enable-sharp-backslash-syntax)
+
 ;;;; Simple tests using ASCII
 
-(deftest enc.ascii.1
+(defstest enc.ascii.1
     (string-to-octets "abc" :encoding :ascii)
   #(97 98 99))
 
-(deftest enc.ascii.2
+(defstest enc.ascii.2
     (string-to-octets (string #\uED) :encoding :ascii :errorp nil)
   #(#x1a))
 
-(deftest enc.ascii.3
-    (handler-case
-        (string-to-octets (string #\uED) :encoding :ascii :errorp t)
-      (character-encoding-error (c)
-        (values
-         (character-coding-error-position c)
-         (character-coding-error-encoding c)
-         (character-encoding-error-code c))))
-  0 :ascii #xed)
+(deftest enc.ascii.3 ()
+  (handler-case
+      (string-to-octets (string #\uED) :encoding :ascii :errorp t)
+    (character-encoding-error (c)
+      (is (eql 0 (character-coding-error-position c)))
+      (is (eq :ascii (character-coding-error-encoding c)))
+      (is (eql #xed (character-encoding-error-code c))))
+    (:no-error (result)
+      (expected 'character-encoding-error :got result))))
 
-(deftest dec.ascii.1
+(defstest dec.ascii.1
     (octets-to-string (ub8v 97 98 99) :encoding :ascii)
   "abc")
 
-(deftest dec.ascii.2
-    (handler-case
-        (octets-to-string (ub8v 97 128 99) :encoding :ascii :errorp t)
-      (character-decoding-error (c)
-        (values
-         (character-decoding-error-octets c)
-         (character-coding-error-position c)
-         (character-coding-error-encoding c))))
-  #(128) 1 :ascii)
+(deftest dec.ascii.2 ()
+  (handler-case
+      (octets-to-string (ub8v 97 128 99) :encoding :ascii :errorp t)
+    (character-decoding-error (c)
+      (is (equalp #(128) (character-decoding-error-octets c)))
+      (is (eql 1 (character-coding-error-position c)))
+      (is (eq :ascii (character-coding-error-encoding c))))
+    (:no-error (result)
+      (expected 'character-decoding-error :got result))))
 
-(deftest dec.ascii.3
+(defstest dec.ascii.3
     (octets-to-string (ub8v 97 255 98 99) :encoding :ascii :errorp nil)
   #(#\a #\Sub #\b #\c))
 
-(deftest oct-count.ascii.1
+(defstest oct-count.ascii.1
     (string-size-in-octets "abc" :encoding :ascii)
   3 3)
 
-(deftest char-count.ascii.1
+(defstest char-count.ascii.1
     (vector-size-in-chars (ub8v 97 98 99) :encoding :ascii)
   3 3)
 
 ;;;; UTF-8
 
-(deftest char-count.utf-8.1
+(defstest char-count.utf-8.1
     ;; "ni hao" in hanzi with the last octet missing
     (vector-size-in-chars (ub8v 228 189 160 229 165) :errorp nil)
   2 5)
 
-(deftest char-count.utf-8.2
+(deftest char-count.utf-8.2 ()
     ;; same as above with the last 2 octets missing
-    (handler-case
-        (vector-size-in-chars (ub8v 228 189 160 229) :errorp t)
-      (end-of-input-in-character (c)
-         (values
-          (character-decoding-error-octets c)
-          (character-coding-error-position c)
-          (character-coding-error-encoding c))))
-  #(229) 3 :utf-8)
+  (handler-case
+      (vector-size-in-chars (ub8v 228 189 160 229) :errorp t)
+    (end-of-input-in-character (c)
+      (is (equalp #(229) (character-decoding-error-octets c)))
+      (is (eql 3 (character-coding-error-position c)))
+      (is (eq :utf-8 (character-coding-error-encoding c))))
+    (:no-error (result)
+      (expected 'end-of-input-in-character :got result))))
 
 ;;; Lispworks bug?
 #+lispworks
 (pushnew 'dec.utf-8.1 rtest::*expected-failures*)
 
-(deftest dec.utf-8.1
+(defstest dec.utf-8.1
     (octets-to-string (ub8v 228 189 160 229) :errorp nil)
   #(#\u4f60 #\ufffd))
 
-(deftest dec.utf-8.2
-    (handler-case
-        (octets-to-string (ub8v 228 189 160 229) :errorp t)
-      (end-of-input-in-character (c)
-        (values
-         (character-decoding-error-octets c)
-         (character-coding-error-position c)
-         (character-coding-error-encoding c))))
-  #(229) 3 :utf-8)
+(deftest dec.utf-8.2 ()
+  (handler-case
+      (octets-to-string (ub8v 228 189 160 229) :errorp t)
+    (end-of-input-in-character (c)
+      (is (equalp #(229) (character-decoding-error-octets c)))
+      (is (eql 3 (character-coding-error-position c)))
+      (is (eq :utf-8(character-coding-error-encoding c))))
+    (:no-error (result)
+      (expected 'end-of-input-in-character :got result))))
 
 ;;;; UTF-16
 
 ;;; Test that the BOM is not being counted as a character.
-(deftest char-count.utf-16.1
-    (values
-     (vector-size-in-chars (ub8v #xfe #xff #x00 #x55 #x00 #x54 #x00 #x46)
-                           :encoding :utf-16)
-     (vector-size-in-chars (ub8v #xff #xfe #x00 #x55 #x00 #x54 #x00 #x46)
-                           :encoding :utf-16))
-  3 3)
+(deftest char-count.utf-16.bom ()
+  (is (eql (vector-size-in-chars (ub8v #xfe #xff #x00 #x55 #x00 #x54 #x00 #x46)
+                                 :encoding :utf-16)
+           3))
+  (is (eql (vector-size-in-chars (ub8v #xff #xfe #x00 #x55 #x00 #x54 #x00 #x46)
+                                 :encoding :utf-16)
+           3)))
 
 ;;;; MORE TESTS
 
@@ -147,29 +172,25 @@
 
 ;;; Testing consistency by encoding and decoding a simple string for
 ;;; all character encodings.
-(deftest rw-equiv.1
-    (let (failed)
-      (dolist (*default-character-encoding* (list-character-encodings) failed)
-        (let ((octets (string-to-octets *standard-characters*)))
-          (unless (string= (octets-to-string octets) *standard-characters*)
-            (push *default-character-encoding* failed)))))
-  nil)
+(deftest rw-equiv.1 ()
+  (dolist (*default-character-encoding* (list-character-encodings))
+    (let ((octets (string-to-octets *standard-characters*)))
+      (is (string= (octets-to-string octets) *standard-characters*)))))
 
 ;;; FIXME: assumes little-endianness.  Easily fixable when we
 ;;; implement the BE and LE variants of :UTF-16.
-(deftest concatenate-strings-to-octets-equiv.1
-    (let ((foo (octets-to-string (ub8v 102 195 186 195 186)
-                                 :encoding :utf-8))
-          (bar (octets-to-string (ub8v 98 195 161 114)
-                                 :encoding :utf-8)))
-      ;; note: FOO and BAR are not ascii
-      (assert (equalp (concatenate-strings-to-octets :utf-8 foo bar)
-                      (ub8v 102 195 186 195 186 98 195 161 114)))
-      (assert (equalp (concatenate-strings-to-octets :utf-16 foo bar)
-                      (ub8v 102 0 250 0 250 0 98 0 225 0 114 0))))
-  nil)
+(deftest concatenate-strings-to-octets-equiv.1 ()
+  (let ((foo (octets-to-string (ub8v 102 195 186 195 186)
+                               :encoding :utf-8))
+        (bar (octets-to-string (ub8v 98 195 161 114)
+                               :encoding :utf-8)))
+    ;; note: FOO and BAR are not ascii
+    (is (equalp (concatenate-strings-to-octets :utf-8 foo bar)
+                (ub8v 102 195 186 195 186 98 195 161 114)))
+    (is (equalp (concatenate-strings-to-octets :utf-16 foo bar)
+                (ub8v 102 0 250 0 250 0 98 0 225 0 114 0)))))
 
-;;; Testing against files generated by GNU iconv.
+;;;; Testing against files generated by GNU iconv.
 
 (defun test-file (name type)
   (let ((sys-pn (truename
@@ -187,106 +208,93 @@
       (make-array (length data) :element-type '(unsigned-byte 8)
                   :initial-contents data))))
 
-(defun test-encoding (enc &optional input-enc-name)
+(deftest test-encoding (enc &optional input-enc-name)
   (let* ((*default-character-encoding* enc)
          (enc-name (string-downcase (symbol-name enc)))
          (utf8-octets (read-test-file enc-name "txt-utf8"))
          (foo-octets (read-test-file (or input-enc-name enc-name) "txt"))
          (utf8-string (octets-to-string utf8-octets :encoding :utf-8 :errorp t))
          (foo-string (octets-to-string foo-octets :errorp t)))
-    (assert (string= utf8-string foo-string))
-    (assert (= (length foo-string) (vector-size-in-chars foo-octets :errorp t)))
+    (is (string= utf8-string foo-string))
+    (is (= (length foo-string) (vector-size-in-chars foo-octets :errorp t)))
     (unless (member enc '(:utf-16 :utf-32))
       ;; FIXME: skipping UTF-16 and UTF-32 because of the BOMs and
       ;; because the input might not be in native-endian order so the
       ;; comparison will fail there.
       (let ((new-octets (string-to-octets foo-string :errorp t)))
-        (assert (equalp new-octets foo-octets))
-        (assert (= (length foo-octets)
-                   (string-size-in-octets foo-string :errorp t)))))))
+        (is (equalp new-octets foo-octets))
+        (is (eql (length foo-octets)
+                 (string-size-in-octets foo-string :errorp t)))))))
 
-(deftest iconv-test
-    (let (failed)
-      (format t "~&;;~%")
-      (dolist (enc '(:ascii :ebcdic-us :utf-8 :utf-16 :utf-32))
-        (format t "~&;;   ~A ... " enc)
-        (finish-output)
-        (handler-case
-            (progn
-              (case enc
-                (:utf-16 (test-encoding :utf-16 "utf-16-with-le-bom")
-                         (format t "[le bom: OK] "))
-                (:utf-32 (test-encoding :utf-32 "utf-32-with-le-bom")
-                         (format t "[le bom: OK] ")))
-              (test-encoding enc)
-              (format t "OK~%"))
-          ;; run TEST-ENCODING manually to have a look at the error
-          (error ()
-            (push enc failed)
-            (format t "FAILED~%"))))
-      (format t "~&;;~%")
-      failed)
-  nil)
+(deftest iconv-test ()
+  (dolist (enc '(:ascii :ebcdic-us :utf-8 :utf-16 :utf-32))
+    (case enc
+      (:utf-16 (test-encoding :utf-16 "utf-16-with-le-bom"))
+      (:utf-32 (test-encoding :utf-32 "utf-32-with-le-bom")))
+    (test-encoding enc)))
 
 ;;; RT: accept encoding objects in LOOKUP-MAPPING etc.
-(deftest encoding-objects.1
+(defstest encoding-objects.1
     (string-to-octets "abc" :encoding (get-character-encoding :ascii))
   #(97 98 99))
 
-(deftest sharp-backslash.1
-    (loop for string in '("#\\a" "#\\u" "#\\ued")
-          collect (char-code (read-from-string string)))
+(defmacro with-sharp-backslash-syntax (&body body)
+  `(let ((*readtable* (copy-readtable *readtable*)))
+     (set-sharp-backslash-syntax-in-readtable)
+     ,@body))
+
+(defstest sharp-backslash.1
+    (with-sharp-backslash-syntax
+      (loop for string in '("#\\a" "#\\u" "#\\ued")
+            collect (char-code (read-from-string string))))
   (97 117 #xed))
 
-(deftest sharp-backslash.2
-    (handler-case (read-from-string "#\\u12zz")
-      (reader-error () 'reader-error))
-  reader-error)
+(deftest sharp-backslash.2 ()
+  (signals reader-error (with-sharp-backslash-syntax
+                          (read-from-string "#\\u12zz"))))
 
 ;;; RT: the slow implementation of with-simple-vector was buggy.
-(deftest string-to-octets.1
+(defstest string-to-octets.1
     (code-char (aref (string-to-octets "abc" :start 1 :end 2) 0))
   #\b)
 
-(deftest simple-base-string.1
+(defstest simple-base-string.1
     (string-to-octets (coerce "abc" 'base-string) :encoding :ascii)
   #(97 98 99))
 
-(deftest utf-8b.1
+(defstest utf-8b.1
     (string-to-octets (coerce #(#\a #\b #\udcf0) 'unicode-string)
                       :encoding :utf-8b)
   #(97 98 #xf0))
 
-(deftest utf-8b.2
+(defstest utf-8b.2
     (octets-to-string (ub8v 97 98 #xcd) :encoding :utf-8b)
   #(#\a #\b #\udccd))
 
-(deftest utf-8b.3
+(defstest utf-8b.3
     (octets-to-string (ub8v 97 #xf0 #xf1 #xff #x01) :encoding :utf-8b)
   #(#\a #\udcf0 #\udcf1 #\udcff #\udc01))
 
-(deftest utf-8b.4
-    (let* ((octets (coerce (loop repeat 8192 collect (random (+ #x82)))
-                           '(array (unsigned-byte 8) (*))))
-           (string (octets-to-string octets :encoding :utf-8b)))
-      (equalp octets (string-to-octets string :encoding :utf-8b)))
-  t)
+(deftest utf-8b.4 ()
+  (let* ((octets (coerce (loop repeat 8192 collect (random (+ #x82)))
+                         '(array (unsigned-byte 8) (*))))
+         (string (octets-to-string octets :encoding :utf-8b)))
+    (is (equalp octets (string-to-octets string :encoding :utf-8b)))))
 
 ;;; The following tests have been adapted from SBCL's
 ;;; tests/octets.pure.lisp file.
 
-(deftest ensure-roundtrip-ascii
-    (let ((octets (ub8 128)))
-      (dotimes (i 128)
-        (setf (aref octets i) i))
-      (let* ((str (octets-to-string octets :encoding :ascii))
-             (oct2 (string-to-octets str :encoding :ascii)))
-        (values (= (length octets) (length oct2))
-                (every #'= octets oct2))))
-  t t)
+(deftest ensure-roundtrip-ascii ()
+  (let ((octets (make-ub8-vector 128)))
+    (dotimes (i 128)
+      (setf (aref octets i) i))
+    (let* ((str (octets-to-string octets :encoding :ascii))
+           (oct2 (string-to-octets str :encoding :ascii)))
+      (is (= (length octets) (length oct2)))
+      (is (every #'= octets oct2)))))
 
-(defun test-8bit-roundtrip (enc)
-  (let ((octets (ub8 256)))
+(deftest test-8bit-roundtrip (enc)
+  (let ((octets (make-ub8-vector 256)))
     (dotimes (i 256)
       (setf (aref octets i) i))
     (let* ((str (octets-to-string octets :encoding enc)))
@@ -305,8 +313,8 @@
                      (vector-push-extend (aref octets i) o))
             (values s o))
         (let ((oct2 (string-to-octets filtered-str :encoding enc)))
-          (and (= (length filtered-octets) (length oct2))
-               (every #'= filtered-octets oct2)))))))
+          (is (eql (length filtered-octets) (length oct2)))
+          (is (every #'eql filtered-octets oct2)))))))
 
 (defparameter *iso-8859-charsets*
   '(:iso-8859-1 :iso-8859-2 :iso-8859-3 :iso-8859-4 :iso-8859-5 :iso-8859-6
@@ -315,48 +323,40 @@
 
 ;;; Don't actually see what comes out, but there shouldn't be any
 ;;; errors.
-(deftest iso-8859-roundtrip-no-checking
-    (loop for enc in *iso-8859-charsets* do (test-8bit-roundtrip enc))
-  nil)
+(deftest iso-8859-roundtrip-no-checking ()
+  (loop for enc in *iso-8859-charsets* do (test-8bit-roundtrip enc)))
 
-(deftest ensure-roundtrip-latin
-    (loop for enc in '(:latin1 :latin9)
-            unless (test-8bit-roundtrip enc)
-            collect enc)
-  nil)
+(deftest ensure-roundtrip-latin ()
+  (loop for enc in '(:latin1 :latin9) do (test-8bit-roundtrip enc)))
 
 ;;; Latin-9 chars; the previous test checked roundtrip from
 ;;; octets->char and back, now test that the latin-9 characters did in
 ;;; fact appear during that trip.
-(deftest ensure-roundtrip-latin9
-    (let ((l9c (map 'string #'code-char '(8364 352 353 381 382 338 339 376))))
-      (string= (octets-to-string (string-to-octets l9c :encoding :latin9)
-                                 :encoding :latin9)
-               l9c))
-  t)
+(deftest ensure-roundtrip-latin9 ()
+  (let ((l9c (map 'string #'code-char '(8364 352 353 381 382 338 339 376))))
+    (is (string= (octets-to-string (string-to-octets l9c :encoding :latin9)
+                                   :encoding :latin9)
+                 l9c))))
 
-(defun test-unicode-roundtrip (enc)
+(deftest test-unicode-roundtrip (enc)
   (let ((string (make-string unicode-char-code-limit)))
     (dotimes (i unicode-char-code-limit)
       (setf (char string i) (code-char i)))
     (let ((string2 (octets-to-string (string-to-octets string :encoding enc
                                                        :errorp t)
                                      :encoding enc :errorp t)))
-      (values (= (length string2) (length string))
-              (string= string string2)))))
+      (is (eql (length string2) (length string)))
+      (is (string= string string2)))))
 
-(deftest ensure-roundtrip.utf8
-    (test-unicode-roundtrip :utf-8)
-  t t)
+(deftest ensure-roundtrip.utf8 ()
+  (test-unicode-roundtrip :utf-8))
 
-(deftest ensure-roundtrip.utf32
-    (test-unicode-roundtrip :utf-32)
-  t t)
+(deftest ensure-roundtrip.utf32 ()
+  (test-unicode-roundtrip :utf-32))
 
-;;; Commented out because it's a slow test.
-#+(and (or) sbcl)
+#+sbcl
 (progn
-  (defun test-encode-against-sbcl (enc)
+  (deftest test-encode-against-sbcl (enc)
     (let ((string (make-string unicode-char-code-limit)))
       (dotimes (i unicode-char-code-limit)
         (setf (char string i) (code-char i)))
@@ -364,155 +364,133 @@
             for babel = (string-to-octets (string ch) :encoding enc)
             for sbcl = (sb-ext:string-to-octets (string ch)
                                                 :external-format enc)
-            unless (equalp babel sbcl)
-            do (return (list (char-code ch) :babel babel :sbcl sbcl)))))
+            do (is (equalp babel sbcl)))))
 
-  (deftest test-encode-against-sbcl.utf-8
-      (test-encode-against-sbcl :utf-8)
-    nil))
+  ;; not run automatically because it's a bit slow (1114112 assertions)
+  (deftest (test-encode-against-sbcl.utf-8 :auto-call nil) ()
+    (test-encode-against-sbcl :utf-8)))
 
-(deftest non-ascii-bytes
-    (let ((octets (make-array 128
-                              :element-type '(unsigned-byte 8)
-                              :initial-contents (loop for i from 128 below 256
-                                                      collect i))))
-      (string= (octets-to-string octets :encoding :ascii :errorp nil)
-               (make-string 128 :initial-element #\Sub)))
-  t)
+(deftest non-ascii-bytes ()
+  (let ((octets (make-array 128
+                            :element-type '(unsigned-byte 8)
+                            :initial-contents (loop for i from 128 below 256
+                                                    collect i))))
+    (is (string= (octets-to-string octets :encoding :ascii :errorp nil)
+                 (make-string 128 :initial-element #\Sub)))))
 
-(deftest non-ascii-chars
-    (let ((string (make-array 128
-                              :element-type 'character
-                              :initial-contents (loop for i from 128 below 256
-                                                      collect (code-char i)))))
-      (equalp (string-to-octets string :encoding :ascii :errorp nil)
-              (make-array 128 :initial-element (char-code #\Sub))))
-  t)
+(deftest non-ascii-chars ()
+  (let ((string (make-array 128
+                            :element-type 'character
+                            :initial-contents (loop for i from 128 below 256
+                                                    collect (code-char i)))))
+    (is (equalp (string-to-octets string :encoding :ascii :errorp nil)
+                (make-array 128 :initial-element (char-code #\Sub))))))
 
 ;;; The following UTF-8 decoding tests are adapted from
 ;;; <http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt>.
 
-(defun utf8-decode-test (octets expected-results expected-errors)
+(deftest utf8-decode-test (octets expected-results expected-errors)
   (let ((string (octets-to-string (coerce octets '(vector (unsigned-byte 8) *))
                                   :encoding :utf-8 :errorp nil)))
-    (assert (string= expected-results string))
-    (assert (= (count #\ufffd string) expected-errors))))
+    (is (string= expected-results string))
+    (is (= (count #\ufffd string) expected-errors))))
 
-(defun utf8-decode-tests (octets expected-results)
+(deftest utf8-decode-tests (octets expected-results)
   (let ((expected-errors (count #\? expected-results))
         (expected-results (substitute #\ufffd #\? expected-results)))
     (utf8-decode-test octets expected-results expected-errors)
     (utf8-decode-test (concatenate 'vector '(34) octets '(34))
                       (format nil "\"~A\"" expected-results)
-                      expected-errors))
-  t)
+                      expected-errors)))
 
-(deftest utf8-too-big-characters
-    (progn
-      (utf8-decode-tests #(#xf4 #x90 #x80 #x80) "?") ; #x110000
-      (utf8-decode-tests #(#xf7 #xbf #xbf #xbf) "?") ; #x1fffff
-      (utf8-decode-tests #(#xf8 #x88 #x80 #x80 #x80) "?") ; #x200000
-      (utf8-decode-tests #(#xfb #xbf #xbf #xbf #xbf) "?") ; #x3ffffff
-      (utf8-decode-tests #(#xfc #x84 #x80 #x80 #x80 #x80) "?") ; #x4000000e
-      (utf8-decode-tests #(#xfd #xbf #xbf #xbf #xbf #xbf) "?")) ; #x7fffffff
-  t)
+(deftest utf8-too-big-characters ()
+  (utf8-decode-tests #(#xf4 #x90 #x80 #x80) "?")           ; #x110000
+  (utf8-decode-tests #(#xf7 #xbf #xbf #xbf) "?")           ; #x1fffff
+  (utf8-decode-tests #(#xf8 #x88 #x80 #x80 #x80) "?")      ; #x200000
+  (utf8-decode-tests #(#xfb #xbf #xbf #xbf #xbf) "?")      ; #x3ffffff
+  (utf8-decode-tests #(#xfc #x84 #x80 #x80 #x80 #x80) "?") ; #x4000000e
+  (utf8-decode-tests #(#xfd #xbf #xbf #xbf #xbf #xbf) "?")) ; #x7fffffff
 
-(deftest utf8-unexpected-continuation-bytes
-    (progn
-      (utf8-decode-tests #(#x80) "?")
-      (utf8-decode-tests #(#xbf) "?")
-      (utf8-decode-tests #(#x80 #xbf) "??")
-      (utf8-decode-tests #(#x80 #xbf #x80) "???")
-      (utf8-decode-tests #(#x80 #xbf #x80 #xbf) "????")
-      (utf8-decode-tests #(#x80 #xbf #x80 #xbf #x80) "?????")
-      (utf8-decode-tests #(#x80 #xbf #x80 #xbf #x80 #xbf) "??????")
-      (utf8-decode-tests #(#x80 #xbf #x80 #xbf #x80 #xbf #x80) "???????"))
-  t)
+(deftest utf8-unexpected-continuation-bytes ()
+  (utf8-decode-tests #(#x80) "?")
+  (utf8-decode-tests #(#xbf) "?")
+  (utf8-decode-tests #(#x80 #xbf) "??")
+  (utf8-decode-tests #(#x80 #xbf #x80) "???")
+  (utf8-decode-tests #(#x80 #xbf #x80 #xbf) "????")
+  (utf8-decode-tests #(#x80 #xbf #x80 #xbf #x80) "?????")
+  (utf8-decode-tests #(#x80 #xbf #x80 #xbf #x80 #xbf) "??????")
+  (utf8-decode-tests #(#x80 #xbf #x80 #xbf #x80 #xbf #x80) "???????"))
 
 ;;; All 64 continuation bytes in a row.
-(deftest utf8-continuation-bytes
-    (apply #'utf8-decode-tests
+(deftest utf8-continuation-bytes ()
+  (apply #'utf8-decode-tests
          (loop for i from #x80 to #xbf
                collect i into bytes
                collect #\? into chars
                finally (return (list bytes
-                                     (coerce chars 'string)))))
-  t)
+                                     (coerce chars 'string))))))
 
-(deftest utf8-lonely-start-characters
-    (flet ((lsc (first last)
-             (apply #'utf8-decode-tests
-                    (loop for i from first to last
-                          nconc (list i 32) into bytes
-                          nconc (list #\? #\Space) into chars
-                          finally (return
-                                    (list bytes (coerce chars 'string)))))
-             (apply #'utf8-decode-tests
-                    (loop for i from first to last
-                          collect i into bytes
-                          collect #\? into chars
-                          finally (return
-                                    (list bytes (coerce chars 'string)))))))
-      (lsc #xc0 #xdf)                   ; 2-byte sequence start chars
-      (lsc #xe0 #xef)                   ; 3-byte
-      (lsc #xf0 #xf7)                   ; 4-byte
-      (lsc #xf8 #xfb)                   ; 5-byte
-      (lsc #xfc #xfd)                   ; 6-byte
-      t)
-  t)
+(deftest utf8-lonely-start-characters ()
+  (flet ((lsc (first last)
+           (apply #'utf8-decode-tests
+                  (loop for i from first to last
+                        nconc (list i 32) into bytes
+                        nconc (list #\? #\Space) into chars
+                        finally (return (list bytes (coerce chars 'string)))))
+           (apply #'utf8-decode-tests
+                  (loop for i from first to last
+                        collect i into bytes
+                        collect #\? into chars
+                        finally (return
+                                  (list bytes (coerce chars 'string)))))))
+    (lsc #xc0 #xdf)                     ; 2-byte sequence start chars
+    (lsc #xe0 #xef)                     ; 3-byte
+    (lsc #xf0 #xf7)                     ; 4-byte
+    (lsc #xf8 #xfb)                     ; 5-byte
+    (lsc #xfc #xfd)))                   ; 6-byte
 
 ;;; Otherwise incomplete sequences (last continuation byte missing)
-(deftest utf8-incomplete-sequences
-    (progn
-      (utf8-decode-tests #0=#(#xc0) "?")
-      (utf8-decode-tests #1=#(#xe0 #x80) "?")
-      (utf8-decode-tests #2=#(#xf0 #x80 #x80) "?")
-      (utf8-decode-tests #3=#(#xf8 #x80 #x80 #x80) "?")
-      (utf8-decode-tests #4=#(#xfc #x80 #x80 #x80 #x80) "?")
-      (utf8-decode-tests #5=#(#xdf) "?")
-      (utf8-decode-tests #6=#(#xef #xbf) "?")
-      (utf8-decode-tests #7=#(#xf7 #xbf #xbf) "?")
-      (utf8-decode-tests #8=#(#xfb #xbf #xbf #xbf) "?")
-      (utf8-decode-tests #9=#(#xfd #xbf #xbf #xbf #xbf) "?")
-      ;; All ten previous tests concatenated
-      (utf8-decode-tests (concatenate 'vector
-                                      #0# #1# #2# #3# #4# #5# #6# #7# #8# #9#)
-                         "??????????"))
-  t)
+(deftest utf8-incomplete-sequences ()
+  (utf8-decode-tests #0=#(#xc0) "?")
+  (utf8-decode-tests #1=#(#xe0 #x80) "?")
+  (utf8-decode-tests #2=#(#xf0 #x80 #x80) "?")
+  (utf8-decode-tests #3=#(#xf8 #x80 #x80 #x80) "?")
+  (utf8-decode-tests #4=#(#xfc #x80 #x80 #x80 #x80) "?")
+  (utf8-decode-tests #5=#(#xdf) "?")
+  (utf8-decode-tests #6=#(#xef #xbf) "?")
+  (utf8-decode-tests #7=#(#xf7 #xbf #xbf) "?")
+  (utf8-decode-tests #8=#(#xfb #xbf #xbf #xbf) "?")
+  (utf8-decode-tests #9=#(#xfd #xbf #xbf #xbf #xbf) "?")
+  ;; All ten previous tests concatenated
+  (utf8-decode-tests (concatenate 'vector
+                                  #0# #1# #2# #3# #4# #5# #6# #7# #8# #9#)
+                     "??????????"))
 
-(deftest utf8-random-impossible-bytes
-    (progn
-      (utf8-decode-tests #(#xfe) "?")
-      (utf8-decode-tests #(#xff) "?")
-      (utf8-decode-tests #(#xfe #xfe #xff #xff) "????"))
-  t)
+(deftest utf8-random-impossible-bytes ()
+  (utf8-decode-tests #(#xfe) "?")
+  (utf8-decode-tests #(#xff) "?")
+  (utf8-decode-tests #(#xfe #xfe #xff #xff) "????"))
 
-(deftest utf8-overlong-sequences-/
-    (progn
-      (utf8-decode-tests #(#xc0 #xaf) "?")
-      (utf8-decode-tests #(#xe0 #x80 #xaf) "?")
-      (utf8-decode-tests #(#xf0 #x80 #x80 #xaf) "?")
-      (utf8-decode-tests #(#xf8 #x80 #x80 #x80 #xaf) "?")
-      (utf8-decode-tests #(#xfc #x80 #x80 #x80 #x80 #xaf) "?"))
-  t)
+(deftest utf8-overlong-sequences-/ ()
+  (utf8-decode-tests #(#xc0 #xaf) "?")
+  (utf8-decode-tests #(#xe0 #x80 #xaf) "?")
+  (utf8-decode-tests #(#xf0 #x80 #x80 #xaf) "?")
+  (utf8-decode-tests #(#xf8 #x80 #x80 #x80 #xaf) "?")
+  (utf8-decode-tests #(#xfc #x80 #x80 #x80 #x80 #xaf) "?"))
 
-(deftest utf8-overlong-sequences-rubout
-    (progn
-      (utf8-decode-tests #(#xc1 #xbf) "?")
-      (utf8-decode-tests #(#xe0 #x9f #xbf) "?")
-      (utf8-decode-tests #(#xf0 #x8f #xbf #xbf) "?")
-      (utf8-decode-tests #(#xf8 #x87 #xbf #xbf #xbf) "?")
-      (utf8-decode-tests #(#xfc #x83 #xbf #xbf #xbf #xbf) "?"))
-  t)
+(deftest utf8-overlong-sequences-rubout ()
+  (utf8-decode-tests #(#xc1 #xbf) "?")
+  (utf8-decode-tests #(#xe0 #x9f #xbf) "?")
+  (utf8-decode-tests #(#xf0 #x8f #xbf #xbf) "?")
+  (utf8-decode-tests #(#xf8 #x87 #xbf #xbf #xbf) "?")
+  (utf8-decode-tests #(#xfc #x83 #xbf #xbf #xbf #xbf) "?"))
 
-(deftest utf8-overlong-sequences-null
-    (progn
-      (utf8-decode-tests #(#xc0 #x80) "?")
-      (utf8-decode-tests #(#xe0 #x80 #x80) "?")
-      (utf8-decode-tests #(#xf0 #x80 #x80 #x80) "?")
-      (utf8-decode-tests #(#xf8 #x80 #x80 #x80 #x80) "?")
-      (utf8-decode-tests #(#xfc #x80 #x80 #x80 #x80 #x80) "?"))
-  t)
+(deftest utf8-overlong-sequences-null ()
+  (utf8-decode-tests #(#xc0 #x80) "?")
+  (utf8-decode-tests #(#xe0 #x80 #x80) "?")
+  (utf8-decode-tests #(#xf0 #x80 #x80 #x80) "?")
+  (utf8-decode-tests #(#xf8 #x80 #x80 #x80 #x80) "?")
+  (utf8-decode-tests #(#xfc #x80 #x80 #x80 #x80 #x80) "?"))
 
 ;;; End of adapted SBCL tests.
 
@@ -760,21 +738,16 @@
        224 225 226 259 228 263 230 231 232 233 234 235 236 237 238 239 273 324
        242 243 244 337 246 347 369 249 250 251 252 281 539 255))))
 
-(deftest iso-8859-decode-check
-    (loop for enc in *iso-8859-charsets*
-          for octets = (let ((octets (ub8 256)))
-                         (dotimes (i 256 octets)
-                           (setf (aref octets i) i)))
-          for string = (octets-to-string octets :encoding enc)
-          unless (equalp (map 'vector #'char-code string)
-                         (cdr (assoc enc *iso-8859-tables*)))
-          collect enc)
-  nil)
+(deftest iso-8859-decode-check ()
+  (loop for enc in *iso-8859-charsets*
+        for octets = (let ((octets (make-ub8-vector 256)))
+                       (dotimes (i 256 octets)
+                         (setf (aref octets i) i)))
+        for string = (octets-to-string octets :encoding enc)
+        do (is (equalp (map 'vector #'char-code string)
+                       (cdr (assoc enc *iso-8859-tables*))))))
 
-(deftest character-out-of-range.utf-32
-    (handler-case
-        (octets-to-string (ub8v 0 0 #xfe #xff 0 #x11 0 0)
-                          :encoding :utf-32 :errorp t)
-      (character-out-of-range () t)
-      (:no-error () nil))
-  t)
+(deftest character-out-of-range.utf-32 ()
+  (signals character-out-of-range
+    (octets-to-string (ub8v 0 0 #xfe #xff 0 #x11 0 0)
+                      :encoding :utf-32 :errorp t)))
