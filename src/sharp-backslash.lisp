@@ -27,7 +27,7 @@
 (in-package #:babel)
 
 #-allegro
-(defun sharp-backslash-reader (original-sharp-backslash-reader stream char numarg)
+(defun sharp-backslash-reader (original-reader stream char numarg)
   (let ((1st-char (read-char stream)))
     (if (and (char-equal 1st-char #\u)
              ;; because #\z is not a digit char...
@@ -36,8 +36,9 @@
         (let ((token (let ((*read-base* 16)) (read stream))))
           (if (typep token 'babel-encodings::code-point)
               (code-char token)
-              (simple-reader-error stream "Unrecognized character name: u~A" token)))
-        (funcall original-sharp-backslash-reader
+              (simple-reader-error stream "Unrecognized character name: u~A"
+                                   token)))
+        (funcall original-reader
                  (make-concatenated-stream (make-string-input-stream
                                             (string 1st-char))
                                            stream)
@@ -50,7 +51,7 @@
 ;;; twice, very weird.  This is the best workaround I could think of.
 ;;; It sucks.
 #+allegro
-(defun sharp-backslash-reader (original-sharp-backslash-reader stream char numarg)
+(defun sharp-backslash-reader (original-reader stream char numarg)
   (let* ((1st-char (read-char stream))
          (rest (ignore-errors (excl::read-extended-token stream)))
          (code (when (and rest (char-equal 1st-char #\u))
@@ -61,7 +62,7 @@
             (s (concatenate 'string "#\\" (string 1st-char) rest))
           (read-char s)
           (read-char s)
-          (funcall original-sharp-backslash-reader s char numarg)))))
+          (funcall original-reader s char numarg)))))
 
 (defun make-sharp-backslash-reader ()
   (let ((original-sharp-backslash (get-dispatch-macro-character #\# #\\)))
