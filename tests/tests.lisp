@@ -29,7 +29,10 @@
 (defpackage #:babel-tests
   (:use #:common-lisp #:babel #:babel-encodings #:rtest)
   (:export #:run))
+
 (in-package #:babel-tests)
+
+(enable-sharp-backslash-syntax)
 
 (defun run (&key (compiled nil))
   (let ((rtest::*compile-tests* compiled)
