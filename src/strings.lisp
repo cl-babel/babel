@@ -117,8 +117,15 @@ are less than UNICODE-CHAR-CODE-LIMIT."
    :code-point-seq-getter string-get
    :code-point-seq-type simple-unicode-string))
 
-(defun lookup-string-vector-mapping (encoding)
-  (lookup-mapping *string-vector-mappings* encoding))
+(defparameter *simple-base-string-vector-mappings*
+  (instantiate-concrete-mappings
+   ;; :optimize ((speed 3) (safety 0) (debug 0) (compilation-speed 0))
+   :octet-seq-setter ub-set
+   :octet-seq-getter ub-get
+   :octet-seq-type (simple-array (unsigned-byte 8) (*))
+   :code-point-seq-setter string-set
+   :code-point-seq-getter string-get
+   :code-point-seq-type simple-base-string))
 
 ;;; debugging stuff, TODO: refactor
 
@@ -267,7 +274,7 @@ shouldn't attempt to modify V."
   (with-checked-simple-vector ((vector vector) (start start) (end end))
     (declare (type (simple-array (unsigned-byte 8) (*)) vector))
     (let ((*suppress-character-coding-errors* (not errorp))
-          (mapping (lookup-string-vector-mapping encoding)))
+          (mapping (lookup-mapping *string-vector-mappings* encoding)))
       (multiple-value-bind (size new-end)
           (funcall (code-point-counter mapping) vector start end -1)
         ;; TODO we could optimize ASCII here: the result should
@@ -288,28 +295,46 @@ shouldn't attempt to modify V."
             (enc-bom-encoding enc)
             #()))))
 
-;;; FIXME: we shouldn't really need that coercion to UNICODE-STRING
-;;; but we kind of because it's declared all over.  To avoid that,
-;;; we'd need different types for input and output strings.  Or maybe
-;;; this is not a problem; figure that out.
 (defun string-to-octets (string &key (encoding *default-character-encoding*)
                          (start 0) end (use-bom :default)
                          (errorp (not *suppress-character-coding-errors*)))
-  (check-type string string)
-  (with-checked-simple-vector ((string (coerce string 'unicode-string))
-                               (start start) (end end))
-    (declare (type simple-unicode-string string))
-    (let* ((*suppress-character-coding-errors* (not errorp))
-           (mapping (lookup-string-vector-mapping encoding))
-           (bom (bom-vector encoding use-bom))
-           (vector (make-array (the array-index
-                                 (+ (funcall (octet-counter mapping)
-                                             string start end -1)
-                                    (length bom)))
-                               :element-type '(unsigned-byte 8))))
-      (replace vector bom)
-      (funcall (encoder mapping) string start end vector (length bom))
-      vector)))
+  (declare (optimize (speed 3) (safety 2)))
+  (let ((*suppress-character-coding-errors* (not errorp)))
+    (etypecase string
+      (simple-base-string
+       (unless end
+         (setf end (length string)))
+       (check-vector-bounds string start end)
+       (let* ((mapping (lookup-mapping *simple-base-string-vector-mappings*
+                                       encoding))
+              (bom (bom-vector encoding use-bom))
+              (bom-length (length bom))
+              (result (make-array (+ (length string) bom-length)
+                                  :element-type '(unsigned-byte 8))))
+         (replace result bom)
+         (funcall (the function (encoder mapping))
+                  string start end result bom-length)
+         result))
+      (string
+       ;; FIXME: we shouldn't really need that coercion to UNICODE-STRING
+       ;; but we kind of because it's declared all over.  To avoid that,
+       ;; we'd need different types for input and output strings.  Or maybe
+       ;; this is not a problem; figure that out.
+       (with-checked-simple-vector ((string (coerce string 'unicode-string))
+                                    (start start) (end end))
+         (declare (type simple-unicode-string string))
+         (let* ((mapping (lookup-mapping *string-vector-mappings* encoding))
+                (bom (bom-vector encoding use-bom))
+                (bom-length (length bom))
+                (result (make-array (+ (the array-index
+                                         (funcall (the function (octet-counter mapping))
+                                                  string start end -1))
+                                       bom-length)
+                                    :element-type '(unsigned-byte 8))))
+           (replace result bom)
+           (funcall (the function (encoder mapping))
+                    string start end result bom-length)
+           result))))))
 
 (defun concatenate-strings-to-octets (encoding &rest strings)
   "Optimized equivalent of
@@ -344,7 +369,7 @@ shouldn't attempt to modify V."
   (with-checked-simple-vector ((string (coerce string 'unicode-string))
                                (start start) (end end))
     (declare (type simple-unicode-string string))
-    (let ((mapping (lookup-string-vector-mapping encoding))
+    (let ((mapping (lookup-mapping *string-vector-mappings* encoding))
           (*suppress-character-coding-errors* (not errorp)))
       (when maxp (assert (plusp max)))
       (funcall (octet-counter mapping) string start end max))))
@@ -355,7 +380,7 @@ shouldn't attempt to modify V."
   (check-type vector (vector (unsigned-byte 8)))
   (with-checked-simple-vector ((vector vector) (start start) (end end))
     (declare (type (simple-array (unsigned-byte 8) (*)) vector))
-    (let ((mapping (lookup-string-vector-mapping encoding))
+    (let ((mapping (lookup-mapping *string-vector-mappings* encoding))
           (*suppress-character-coding-errors* (not errorp)))
       (when maxp (assert (plusp max)))
       (funcall (code-point-counter mapping) vector start end max))))
