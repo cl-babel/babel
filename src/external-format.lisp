@@ -70,14 +70,19 @@ CHARACTER-ENCODING and an end-of-line style."))
   (and (eq (external-format-encoding ef1) (external-format-encoding ef2))
        (eq (external-format-eol-style ef1) (external-format-eol-style ef2))))
 
+(declaim (inline lookup-mapping))
 (defun lookup-mapping (ht encoding)
   "HT should be an hashtable created by
 INSTANTIATE-CONCRETE-MAPPINGS. ENCODING should be either an
 external format, an encoding object or a keyword symbol
 denoting a character encoding name or one of its aliases."
-  (or (gethash (etypecase encoding
-                 (keyword encoding)
-                 (character-encoding (enc-name encoding))
-                 (external-format (enc-name (external-format-encoding encoding))))
-               ht)
-      (error "signal proper error here")))
+  (or (etypecase encoding
+        (keyword
+         (gethash encoding ht))
+        (babel-encodings::concrete-mapping
+         encoding)
+        (character-encoding
+         (gethash (enc-name encoding) ht))
+        (external-format
+         (gethash (enc-name (external-format-encoding encoding)) ht)))
+      (error "~S is not a valid encoding designator" encoding)))
