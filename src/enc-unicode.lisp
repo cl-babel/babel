@@ -706,25 +706,27 @@ order with a leading byte-order mark."
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
-     (let ((reverse nil))
-       (when (and (not (zerop (- end start)))
-                  (case (,getter src 0 4)
-                    (#.+byte-order-mark-code+ t)
-                    (#.+swapped-byte-order-mark-code-32+
-                     (setq reverse t) t)))
-         (incf start 4))
-      (loop for i fixnum from start below end by 4
-            for di from d-start do
-            (,setter (let ((unit (if reverse
-                                     (,getter src i 4 :re)
-                                     (,getter src i 4))))
-                       (if (>= unit #x110000)
-                           (decoding-error (vector (,getter src i)
-                                                   (,getter src (+ i 1))
-                                                   (,getter src (+ i 2))
-                                                   (,getter src (+ i 3)))
-                                           :utf-32 src i +repl+
-                                           'character-out-of-range)
-                           unit))
-                     dest di)
-            finally (return (the fixnum (- di d-start)))))))
+     (let ((reverse #+big-endian nil #+little-endian t))
+       (when (not (zerop (- end start)))
+         (case (,getter src 0 4)
+           (#.+byte-order-mark-code+
+              (incf start 4)
+              #+little-endian (setq reverse nil))
+           (#.+swapped-byte-order-mark-code-32+
+              (incf start 4)
+              #+big-endian (setq reverse t))))
+       (loop for i fixnum from start below end by 4
+             for di from d-start
+             do (,setter (let ((unit (if reverse
+                                         (,getter src i 4 :re)
+                                         (,getter src i 4))))
+                           (if (>= unit #x110000)
+                               (decoding-error (vector (,getter src i)
+                                                       (,getter src (+ i 1))
+                                                       (,getter src (+ i 2))
+                                                       (,getter src (+ i 3)))
+                                               :utf-32 src i +repl+
+                                               'character-out-of-range)
+                               unit))
+                         dest di)
+             finally (return (the fixnum (- di d-start)))))))

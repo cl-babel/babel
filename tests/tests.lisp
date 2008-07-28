@@ -165,6 +165,13 @@
                                  :encoding :utf-16)
            3)))
 
+;;;; UTF-32
+
+;;; RT: check that UTF-32 characters without a BOM are treated as
+;;; little-endian.
+(deftest endianness.utf-32.no-bom ()
+  (is (string= "a" (octets-to-string (ub8v 0 0 0 97) :encoding :utf-32))))
+
 ;;;; MORE TESTS
 
 (defparameter *standard-characters*
