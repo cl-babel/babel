@@ -52,16 +52,6 @@
   `(deftest ,name ()
      (returns ,form ,@(mapcar (lambda (x) `',x) return-values))))
 
-(defmacro signals* (form &body clauses)
-  `(handler-case ,form
-     ,@clauses
-     (:no-error (result)
-       (declare (ignore result))
-       ;; it'd be nice if the failture described what FORM returned.
-       (stefil::record-failure 'stefil::missing-condition
-                               :form ',form
-                               :condition ',(mapcar #'car clauses)))))
-
 (defun fail (control-string &rest arguments)
   (stefil::record-failure 'stefil::failed-assertion
                           :format-control control-string
@@ -137,8 +127,8 @@
       (expected 'end-of-input-in-character :got result))))
 
 ;;; Lispworks bug?
-#+lispworks
-(pushnew 'dec.utf-8.1 rtest::*expected-failures*)
+;; #+lispworks
+;; (pushnew 'dec.utf-8.1 rtest::*expected-failures*)
 
 (defstest dec.utf-8.1
     (octets-to-string (ub8v 228 189 160 229) :errorp nil)
@@ -150,7 +140,7 @@
     (end-of-input-in-character (c)
       (is (equalp #(229) (character-decoding-error-octets c)))
       (is (eql 3 (character-coding-error-position c)))
-      (is (eq :utf-8(character-coding-error-encoding c))))
+      (is (eq :utf-8 (character-coding-error-encoding c))))
     (:no-error (result)
       (expected 'end-of-input-in-character :got result))))
 
