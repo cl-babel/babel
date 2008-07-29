@@ -27,7 +27,7 @@
 (defsystem babel
   :description "Babel, a charset conversion library."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
-  :version "0.2.0"
+  :version "0.3.0"
   :licence "MIT"
   :depends-on (trivial-features alexandria)
   :components
