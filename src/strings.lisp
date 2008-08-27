@@ -282,7 +282,9 @@ shouldn't attempt to modify V."
   (check-type use-bom (member :default t nil))
   (if (null use-bom)
       #()
-      (let ((enc (get-character-encoding encoding)))
+      (let ((enc (typecase encoding
+                   (external-format (external-format-encoding encoding))
+                   (t (get-character-encoding encoding)))))
         (if (or (eq use-bom t)
                 (and (eq use-bom :default) (enc-use-bom enc)))
             (enc-bom-encoding enc)
