@@ -251,10 +251,6 @@ shouldn't attempt to modify V."
        (with-simple-vector ((,v ,vector) (,s ,start) (,e ,e))
          ,@body))))
 
-;;; In the these 4 functions below, ERRORP defaults to NIL.  But it
-;;; might as well default to T.  TODO: find out a good reason to go
-;;; either way.
-;;;
 ;;; Future features these functions should have:
 ;;;
 ;;;   * null-terminate
@@ -274,6 +270,8 @@ shouldn't attempt to modify V."
           (mapping (lookup-string-vector-mapping encoding)))
       (multiple-value-bind (size new-end)
           (funcall (code-point-counter mapping) vector start end -1)
+        ;; TODO we could optimize ASCII here: the result should
+        ;; be a simple-base-string filled using code-char...
         (let ((string (make-string size :element-type 'unicode-char)))
           (funcall (decoder mapping) vector start new-end string 0)
           string)))))
