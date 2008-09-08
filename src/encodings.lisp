@@ -126,9 +126,9 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 
 ;;; TODO: describe what mappings are
 
-(defun 8-bit-fixed-width-counter (getter type)
+(defun make-8-bit-fixed-width-counter (getter type)
   (declare (ignore getter type))
-  `(lambda (seq start end max)
+  `(named-lambda 8-bit-fixed-width-counter (seq start end max)
      (declare (ignore seq) (fixnum start end max))
      (if (plusp max)
          (let ((count (the fixnum (min max (the fixnum (- end start))))))
@@ -137,19 +137,19 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 
 ;;; Useful to develop new encodings incrementally starting with octet
 ;;; and code-unit counters.
-(defun dummy-coder (sg st ds dt)
+(defun make-dummy-coder (sg st ds dt)
   (declare (ignore sg st ds dt))
-  `(lambda (src s e dest i)
+  `(named-lambda dummy-coder (src s e dest i)
      (declare (ignore src s e dest i))
      (error "this encoder/decoder hasn't been implemented yet")))
 
 (defclass mapping ()
-  ((encoder :accessor encoder :initform #'dummy-coder)
-   (decoder :accessor decoder :initform #'dummy-coder)
+  ((encoder :accessor encoder :initform 'make-dummy-coder)
+   (decoder :accessor decoder :initform 'make-dummy-coder)
    (octet-counter
-    :accessor octet-counter :initform #'8-bit-fixed-width-counter)
+    :accessor octet-counter :initform 'make-8-bit-fixed-width-counter)
    (code-point-counter
-    :accessor code-point-counter :initform #'8-bit-fixed-width-counter)))
+    :accessor code-point-counter :initform 'make-8-bit-fixed-width-counter)))
 
 ;;; TODO: document here
 ;;;
