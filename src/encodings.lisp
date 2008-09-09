@@ -268,7 +268,8 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
   (with-unique-names (s-getter s-type d-setter d-type
                       src start end dest d-start i di)
     `(define-encoder ,encoding (,s-getter ,s-type ,d-setter ,d-type)
-       `(lambda (,',src ,',start ,',end ,',dest ,',d-start)
+       `(named-lambda ,',(symbolicate encoding '#:-unibyte-encoder)
+            (,',src ,',start ,',end ,',dest ,',d-start)
           (declare (type ,,s-type ,',src)
                    (type ,,d-type ,',dest)
                    (fixnum ,',start ,',end ,',d-start))
@@ -291,7 +292,8 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
   (with-unique-names (s-getter s-type d-setter d-type
                       src start end dest d-start i di)
     `(define-decoder ,encoding (,s-getter ,s-type ,d-setter ,d-type)
-       `(lambda (,',src ,',start ,',end ,',dest ,',d-start)
+       `(named-lambda ,',(symbolicate encoding '#:-unibyte-encoder)
+            (,',src ,',start ,',end ,',dest ,',d-start)
           (declare (type ,,s-type ,',src)
                    (type ,,d-type ,',dest)
                    (fixnum ,',start ,',end ,',d-start))

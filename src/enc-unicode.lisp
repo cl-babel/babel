@@ -67,7 +67,7 @@ in 2 to 4 bytes."
   (:documentation "Signalled upon overlong UTF-8 sequences."))
 
 (define-octet-counter :utf-8 (getter type)
-  `(lambda (seq start end max)
+  `(named-lambda utf-8-octet-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
      (loop with noctets fixnum = 0
            for i fixnum from start below end
@@ -83,7 +83,7 @@ in 2 to 4 bytes."
            finally (return (values noctets i)))))
 
 (define-code-point-counter :utf-8 (getter type)
-  `(lambda (seq start end max)
+  `(named-lambda utf-8-code-point-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
      (loop with nchars fixnum = 0
            with i fixnum = start
@@ -128,7 +128,7 @@ in 2 to 4 bytes."
                      (return (values nchars i))))))
 
 (define-encoder :utf-8 (getter src-type setter dest-type)
-  `(lambda (src start end dest d-start)
+  `(named-lambda utf-8-encoder (src start end dest d-start)
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
@@ -163,7 +163,7 @@ in 2 to 4 bytes."
            finally (return (the fixnum (- di d-start))))))
 
 (define-decoder :utf-8 (getter src-type setter dest-type)
-  `(lambda (src start end dest d-start)
+  `(named-lambda utf-8-decoder (src start end dest d-start)
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
@@ -316,7 +316,7 @@ code points for each invalid byte."
 
 ;;; TODO: reuse the :UTF-8 octet counter through a simple macro.
 (define-octet-counter :utf-8b (getter type)
-  `(lambda (seq start end max)
+  `(named-lambda utf-8b-octet-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
      (loop with noctets fixnum = 0
            for i fixnum from start below end
@@ -333,7 +333,7 @@ code points for each invalid byte."
            finally (return (values noctets i)))))
 
 (define-code-point-counter :utf-8b (getter type)
-  `(lambda (seq start end max)
+  `(named-lambda utf-8b-code-point-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
      (loop with nchars fixnum = 0
            with i fixnum = start
@@ -384,7 +384,7 @@ code points for each invalid byte."
 
 ;;; TODO: reuse the :UTF-8 encoder with through a simple macro.
 (define-encoder :utf-8b (getter src-type setter dest-type)
-  `(lambda (src start end dest d-start)
+  `(named-lambda utf-8b-encoder (src start end dest d-start)
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
@@ -423,7 +423,7 @@ code points for each invalid byte."
            finally (return (the fixnum (- di d-start))))))
 
 (define-decoder :utf-8b (getter src-type setter dest-type)
-  `(lambda (src start end dest d-start)
+  `(named-lambda utf-8b-decoder (src start end dest d-start)
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
@@ -494,7 +494,7 @@ code points for each invalid byte."
 ;;; for example, the maximum code-point will always be < #x10000 in
 ;;; which case we could simply return (* 2 (- end start)).
 (defmacro utf16-octet-counter (getter type)
-  `(lambda (seq start end max)
+  `(named-lambda utf-16-octet-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
      (loop with noctets fixnum = 0
            for i fixnum from start below end
@@ -538,7 +538,7 @@ written in native byte-order with a leading byte-order mark."
   `(utf16-octet-counter ,getter ,type))
 
 (define-code-point-counter :utf-16 (getter type)
-  `(lambda (seq start end max)
+  `(named-lambda utf-16-code-point-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
      (let* ((swap (when (> end start)
                     (case (,getter seq start 2)
@@ -571,7 +571,7 @@ written in native byte-order with a leading byte-order mark."
                        (return (values count i)))))))
 
 (define-encoder :utf-16 (getter src-type setter dest-type)
-  `(lambda (src start end dest d-start)
+  `(named-lambda utf-16-encoder (src start end dest d-start)
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
@@ -590,7 +590,7 @@ written in native byte-order with a leading byte-order mark."
            finally (return (the fixnum (- di d-start))))))
 
 (define-decoder :utf-16 (getter src-type setter dest-type)
-  `(lambda (src start end dest d-start)
+  `(named-lambda utf-16-decoder (src start end dest d-start)
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
@@ -635,7 +635,7 @@ written in native byte-order with a leading byte-order mark."
 
 (defmacro utf32-octet-counter (getter type)
   (declare (ignore getter type))
-  `(lambda (seq start end max)
+  `(named-lambda utf-32-octet-counter (seq start end max)
      (declare  (ignore seq) (fixnum start end max))
      ;; XXX: the result can be bigger than a fixnum and we don't want
      ;; that to happen.  Possible solution: signal a warning (hmm,
@@ -667,7 +667,7 @@ order with a leading byte-order mark."
   `(utf32-octet-counter ,getter ,type))
 
 (define-code-point-counter :utf-32 (getter type)
-  `(lambda (seq start end max)
+  `(named-lambda utf-32-code-point-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
      ;; check for bom
      (when (and (/= start end)
@@ -692,7 +692,7 @@ order with a leading byte-order mark."
           (values count end))))))
 
 (define-encoder :utf-32 (getter src-type setter dest-type)
-  `(lambda (src start end dest d-start)
+  `(named-lambda utf-32-encoder (src start end dest d-start)
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
@@ -702,7 +702,7 @@ order with a leading byte-order mark."
            finally (return (the fixnum (- di d-start))))))
 
 (define-decoder :utf-32 (getter src-type setter dest-type)
-  `(lambda (src start end dest d-start)
+  `(named-lambda utf-32-decoder (src start end dest d-start)
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
