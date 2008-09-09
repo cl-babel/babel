@@ -145,11 +145,10 @@ are less than UNICODE-CHAR-CODE-LIMIT."
        ,@(loop for enc in encodings
                for am = (gethash enc babel-encodings::*abstract-mappings*)
                collect
-               `(let ((cm (make-instance 'babel-encodings::concrete-mapping)))
-                  ,(babel-encodings::%am-to-cm
-                    'cm am octet-seq-getter octet-seq-setter
-                    octet-seq-type code-pointer-seq-getter
-                    code-point-seq-setter code-point-seq-type)
+               `(let ((cm ,(babel-encodings::instantiate-concrete-mapping
+                            am octet-seq-getter octet-seq-setter
+                            octet-seq-type code-pointer-seq-getter
+                            code-point-seq-setter code-point-seq-type)))
                   (setf (gethash ,enc ,hash-table-place) cm)))
        (values))))
 
@@ -171,11 +170,10 @@ are less than UNICODE-CHAR-CODE-LIMIT."
         ,@(loop for enc in encodings
                 for am = (gethash enc babel-encodings::*abstract-mappings*)
                 collect
-                `(let ((cm (make-instance 'babel-encodings::concrete-mapping)))
-                   ,(babel-encodings::%am-to-cm
-                     'cm am octet-seq-getter octet-seq-setter
-                     octet-seq-type code-pointer-seq-getter
-                     code-point-seq-setter code-point-seq-type)
+                `(let ((cm ,(babel-encodings::instantiate-concrete-mapping
+                             am octet-seq-getter octet-seq-setter
+                             octet-seq-type code-pointer-seq-getter
+                             code-point-seq-setter code-point-seq-type)))
                    (setf (gethash ,enc ,hash-table-place) cm))))))
   (values))
 

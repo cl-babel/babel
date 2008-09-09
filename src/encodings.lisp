@@ -143,14 +143,6 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
      (declare (ignore src s e dest i))
      (error "this encoder/decoder hasn't been implemented yet")))
 
-(defclass mapping ()
-  ((encoder :accessor encoder :initform 'make-dummy-coder)
-   (decoder :accessor decoder :initform 'make-dummy-coder)
-   (octet-counter
-    :accessor octet-counter :initform 'make-8-bit-fixed-width-counter)
-   (code-point-counter
-    :accessor code-point-counter :initform 'make-8-bit-fixed-width-counter)))
-
 ;;; TODO: document here
 ;;;
 ;;; ENCODER -- (lambda (src-getter src-type dest-setter dest-type) ...)
@@ -158,7 +150,13 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 ;;;
 ;;; OCTET-COUNTER -- (lambda (getter type) ...)
 ;;; CODE-POINT-COUNTER -- (lambda (getter type) ...)
-(defclass abstract-mapping (mapping) ())
+(defclass abstract-mapping ()
+  ((encoder-factory :accessor encoder-factory :initform 'make-dummy-coder)
+   (decoder-factory :accessor decoder-factory :initform 'make-dummy-coder)
+   (octet-counter-factory :accessor octet-counter-factory
+                          :initform 'make-8-bit-fixed-width-counter)
+   (code-point-counter-factory :accessor code-point-counter-factory
+                               :initform 'make-8-bit-fixed-width-counter)))
 
 ;;; TODO: document these
 ;;;
@@ -169,9 +167,13 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 ;;; CODE-POINT-COUNTER -- (lambda (seq start end max-chars) ...)
 ;;;                        => N-CHARS NEW-END
 ;;;   (important: describe NEW-END)
-(defclass concrete-mapping (mapping) ())
+(defclass concrete-mapping ()
+  ((encoder :accessor encoder)
+   (decoder :accessor decoder)
+   (octet-counter :accessor octet-counter)
+   (code-point-counter :accessor code-point-counter)))
 
-(defvar *abstract-mappings* (make-hash-table :test 'eq))
+(defparameter *abstract-mappings* (make-hash-table :test 'eq))
 
 (defun get-abstract-mapping (encoding)
   (gethash encoding *abstract-mappings*))
@@ -179,37 +181,47 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 (defun (setf get-abstract-mapping) (value encoding)
   (setf (gethash encoding *abstract-mappings*) value))
 
-(defun register-mapping (encoding slot-name fn)
-  (let ((m (get-abstract-mapping encoding)))
-    (when (null m)
-      (setq m (make-instance 'abstract-mapping))
-      (setf (get-abstract-mapping encoding) m))
-    (setf (slot-value m slot-name) fn)))
+(defun %register-mapping-part (encoding slot-name fn)
+  (let ((mapping (get-abstract-mapping encoding)))
+    (unless mapping
+      (setq mapping (make-instance 'abstract-mapping))
+      (setf (get-abstract-mapping encoding) mapping))
+    (setf (slot-value mapping slot-name) fn)))
 
 ;;; See enc-*.lisp for example usages of these 4 macros.
 
 (defmacro define-encoder (encoding (sa st da dt) &body body)
-  `(register-mapping ,encoding 'encoder (lambda (,sa ,st ,da ,dt) ,@body)))
+  `(%register-mapping-part ,encoding 'encoder-factory
+                           (named-lambda encoder (,sa ,st ,da ,dt)
+                             ,@body)))
 
 (defmacro define-decoder (encoding (sa st da dt) &body body)
-  `(register-mapping ,encoding 'decoder (lambda (,sa ,st ,da ,dt) ,@body)))
+  `(%register-mapping-part ,encoding 'decoder-factory
+                           (named-lambda decoder (,sa ,st ,da ,dt)
+                             ,@body)))
 
 (defmacro define-octet-counter (encoding (acc type) &body body)
-  `(register-mapping ,encoding 'octet-counter (lambda (,acc ,type) ,@body)))
+  `(%register-mapping-part ,encoding 'octet-counter-factory
+                           (named-lambda octet-counter-factory (,acc ,type)
+                             ,@body)))
 
 (defmacro define-code-point-counter (encoding (acc type) &body body)
-  `(register-mapping
-    ,encoding 'code-point-counter (lambda (,acc ,type) ,@body)))
+  `(%register-mapping-part ,encoding 'code-point-counter-factory
+                           (named-lambda code-point-counter (,acc ,type)
+                             ,@body)))
 
 ;;; Funcalls (at macro-expansion time) the abstract mappings with the
 ;;; src/dest accessors and types which generate the appropriate code
 ;;; for the concrete mappings.  These functions are then saved in
 ;;; their respective slots of the CONCRETE-MAPPING object.
-(defun %am-to-cm (cm am osg oss ost cpsg cpss cpst)
-  `(setf (encoder ,cm) ,(funcall (encoder am) cpsg cpst oss ost)
-         (decoder ,cm) ,(funcall (decoder am) osg ost cpss cpst)
-         (code-point-counter ,cm) ,(funcall (code-point-counter am) osg ost)
-         (octet-counter ,cm) ,(funcall (octet-counter am) cpsg cpst)))
+(defun instantiate-concrete-mapping (am osg oss ost cpsg cpss cpst)
+  `(let ((cm (make-instance 'concrete-mapping)))
+     (setf (encoder cm) ,(funcall (encoder-factory am) cpsg cpst oss ost)
+           (decoder cm) ,(funcall (decoder-factory am) osg ost cpss cpst)
+           (code-point-counter cm) ,(funcall (code-point-counter-factory am)
+                                              osg ost)
+           (octet-counter cm) ,(funcall (octet-counter-factory am) cpsg cpst))
+     cm))
 
 ;;; Expands into code generated by the available abstract mappings
 ;;; that will be compiled into concrete mappings.  This is used in
@@ -226,11 +238,11 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
                   (setf (gethash kw ht) cm)))))
        ,@(loop for am being the hash-values of *abstract-mappings*
                using (hash-key enc) collect
-               `(let ((cm (make-instance 'concrete-mapping)))
-                  ,(%am-to-cm 'cm am octet-seq-getter octet-seq-setter
-                              octet-seq-type code-point-seq-getter
-                              code-point-seq-setter code-point-seq-type)
-                  (notice-mapping ,enc cm))))
+              `(let ((cm ,(instantiate-concrete-mapping
+                           am octet-seq-getter octet-seq-setter
+                           octet-seq-type code-point-seq-getter
+                           code-point-seq-setter code-point-seq-type)))
+                 (notice-mapping ,enc cm))))
       ht))
 
 ;;;; Utilities used in enc-*.lisp
