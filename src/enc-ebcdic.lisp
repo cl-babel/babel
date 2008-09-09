@@ -30,8 +30,7 @@
     "An alleged character set used on IBM dinosaurs."
   :aliases '(:ibm-037))
 
-(declaim (type (simple-array (unsigned-byte 8) (256)) *ebcdic-decode-table*))
-(defparameter *ebcdic-decode-table*
+(define-constant +ebcdic-decode-table+
   (make-array
    256 :element-type 'ub8 :initial-contents
    '(#x00 #x01 #x02 #x03 #x9c #x09 #x86 #x7f #x97 #x8d #x8e #x0b #x0c #x0d
@@ -52,20 +51,21 @@
      #x4b #x4c #x4d #x4e #x4f #x50 #x51 #x52 #xb9 #xfb #xfc #xf9 #xfa #xff
      #x5c #xf7 #x53 #x54 #x55 #x56 #x57 #x58 #x59 #x5a #xb2 #xd4 #xd6 #xd2
      #xd3 #xd5 #x30 #x31 #x32 #x33 #x34 #x35 #x36 #x37 #x38 #x39 #xb3 #xdb
-     #xdc #xd9 #xda #x9f)))
+     #xdc #xd9 #xda #x9f))
+  :test #'equalp)
 
-(declaim (type (simple-array (unsigned-byte 8) (256)) *ebcdic-encode-table*))
-(defparameter *ebcdic-encode-table*
+(define-constant +ebcdic-encode-table+
   (loop with rt = (make-array 256 :element-type 'ub8 :initial-element 0)
-        for code across *ebcdic-decode-table* for i from 0 do
+        for code across +ebcdic-decode-table+ for i from 0 do
         (assert (= 0 (aref rt code)))
         (setf (aref rt code) i)
-        finally (return rt)))
+        finally (return rt))
+  :test #'equalp)
 
 (define-unibyte-encoder :ebcdic-us (code)
   (if (>= code 256)
       (handle-error)
-      (aref *ebcdic-encode-table* code)))
+      (aref +ebcdic-encode-table+ code)))
 
 (define-unibyte-decoder :ebcdic-us (octet)
-  (aref *ebcdic-decode-table* octet))
+  (aref +ebcdic-decode-table+ octet))
