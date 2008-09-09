@@ -263,7 +263,8 @@ shouldn't attempt to modify V."
 ;;;   * documentation :)
 
 (declaim (inline octets-to-string string-to-octets string-size-in-octets
-                 vector-size-in-chars concatenate-strings-to-octets))
+                 vector-size-in-chars concatenate-strings-to-octets
+                 bom-vector))
 
 (defun octets-to-string (vector &key (start 0) end
                          (errorp (not *suppress-character-coding-errors*))
@@ -283,15 +284,16 @@ shouldn't attempt to modify V."
 
 (defun bom-vector (encoding use-bom)
   (check-type use-bom (member :default t nil))
-  (if (null use-bom)
-      #()
-      (let ((enc (typecase encoding
-                   (external-format (external-format-encoding encoding))
-                   (t (get-character-encoding encoding)))))
-        (if (or (eq use-bom t)
-                (and (eq use-bom :default) (enc-use-bom enc)))
-            (enc-bom-encoding enc)
-            #()))))
+  (the simple-vector
+    (if (null use-bom)
+        #()
+        (let ((enc (typecase encoding
+                     (external-format (external-format-encoding encoding))
+                     (t (get-character-encoding encoding)))))
+          (if (or (eq use-bom t)
+                  (and (eq use-bom :default) (enc-use-bom enc)))
+              (enc-bom-encoding enc)
+              #())))))
 
 (defun string-to-octets (string &key (encoding *default-character-encoding*)
                          (start 0) end (use-bom :default)
