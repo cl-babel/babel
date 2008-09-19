@@ -32,8 +32,7 @@
 (defun run-tests ()
   (funcall-test-with-feedback-message 'babel-tests))
 
-(in-root-suite)
-(defsuite* babel-tests)
+(defsuite* (babel-tests :in root-suite))
 
 (defun ub8v (&rest contents)
   (make-array (length contents) :element-type '(unsigned-byte 8)
