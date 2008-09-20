@@ -120,62 +120,13 @@ are less than UNICODE-CHAR-CODE-LIMIT."
 (defparameter *simple-base-string-vector-mappings*
   (instantiate-concrete-mappings
    ;; :optimize ((speed 3) (safety 0) (debug 0) (compilation-speed 0))
+   :instantiate-decoders nil
    :octet-seq-setter ub-set
    :octet-seq-getter ub-get
    :octet-seq-type (simple-array (unsigned-byte 8) (*))
    :code-point-seq-setter string-set
    :code-point-seq-getter string-get
    :code-point-seq-type simple-base-string))
-
-;;; debugging stuff, TODO: refactor
-
-#-(and)
-(defmacro recompile-mappings (encodings &key (optimize '((debug 3) (safety 3)))
-                              (hash-table-place '*string-vector-mappings*)
-                              (octet-seq-setter 'ub-set)
-                              (octet-seq-getter 'ub-get)
-                              (octet-seq-type
-                               '(simple-array (unsigned-byte 8) (*)))
-                              (code-point-seq-setter 'string-set)
-                              (code-pointer-seq-getter 'string-get)
-                              (code-point-seq-type 'simple-unicode-string))
-  (let ((encodings (ensure-list encodings)))
-    `(locally
-         (declare (optimize ,@optimize))
-       ,@(loop for enc in encodings
-               for am = (gethash enc babel-encodings::*abstract-mappings*)
-               collect
-               `(let ((cm ,(babel-encodings::instantiate-concrete-mapping
-                            am octet-seq-getter octet-seq-setter
-                            octet-seq-type code-pointer-seq-getter
-                            code-point-seq-setter code-point-seq-type)))
-                  (setf (gethash ,enc ,hash-table-place) cm)))
-       (values))))
-
-#-(and)
-(defun debug-mappings (encodings &key (optimize '((debug 3) (safety 3)))
-                       (hash-table-place '*string-vector-mappings*)
-                       (octet-seq-setter 'ub-set) (octet-seq-getter 'ub-get)
-                       (octet-seq-type '(simple-array (unsigned-byte 8) (*)))
-                       (code-point-seq-setter 'string-set)
-                       (code-pointer-seq-getter 'string-get)
-                       (code-point-seq-type 'simple-unicode-string))
-  (let ((encodings (ensure-list encodings))
-        (*package* (find-package :babel-encodings))
-        (*print-case* :downcase))
-    (pprint
-     `(locally
-          (declare (optimize ,@optimize))
-        (setf ,hash-table-place (make-hash-table :test 'eq))
-        ,@(loop for enc in encodings
-                for am = (gethash enc babel-encodings::*abstract-mappings*)
-                collect
-                `(let ((cm ,(babel-encodings::instantiate-concrete-mapping
-                             am octet-seq-getter octet-seq-setter
-                             octet-seq-type code-pointer-seq-getter
-                             code-point-seq-setter code-point-seq-type)))
-                   (setf (gethash ,enc ,hash-table-place) cm))))))
-  (values))
 
 ;;; Do we want a more a specific error condition here?
 (defun check-vector-bounds (vector start end)
