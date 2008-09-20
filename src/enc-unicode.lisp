@@ -633,18 +633,6 @@ written in native byte-order with a leading byte-order mark."
 
 ;;;; UTF-32
 
-(defmacro utf32-octet-counter (getter type)
-  (declare (ignore getter type))
-  `(named-lambda utf-32-octet-counter (seq start end max)
-     (declare  (ignore seq) (fixnum start end max))
-     ;; XXX: the result can be bigger than a fixnum and we don't want
-     ;; that to happen.  Possible solution: signal a warning (hmm,
-     ;; make that an actual error) and truncate.
-     (if (plusp max)
-         (let ((count (the fixnum (min (floor max 4) (- end start)))))
-           (values (the fixnum (* 4 count)) (the fixnum (+ start count))))
-         (values (the fixnum (* 4 (the fixnum (- end start)))) end))))
-
 (define-character-encoding :utf-32
    "A 32-bit, fixed-length encoding in which all Unicode
 characters can be encoded in a single 32-bit word.  The
@@ -662,9 +650,6 @@ order with a leading byte-order mark."
   #+big-endian #(#x00 #x00 #xfe #xff)
   #+little-endian #(#xff #xfe #x00 #x00)
   :nul-encoding #(0 0 0 0))
-
-(define-octet-counter :utf-32 (getter type)
-  `(utf32-octet-counter ,getter ,type))
 
 (define-code-point-counter :utf-32 (getter type)
   `(named-lambda utf-32-code-point-counter (seq start end max)
