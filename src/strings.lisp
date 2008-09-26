@@ -150,7 +150,7 @@ shouldn't attempt to modify V."
   #+sbcl
   `(sb-kernel:with-array-data ((,v ,vector) (,s ,start) (,e ,end))
      ,@body)
-  #+cmu
+  #+(or cmu scl)
   `(lisp::with-array-data ((,v ,vector) (,s ,start) (,e ,end))
      ,@body)
   #+openmcl
@@ -167,7 +167,7 @@ shouldn't attempt to modify V."
              (,s (+ ,start ,offset)))
          ,@body)))
   ;; slow, copying implementation
-  #-(or sbcl cmu openmcl allegro)
+  #-(or sbcl cmu scl openmcl allegro)
   (once-only (vector)
     `(funcall (if (adjustable-array-p ,vector)
                   #'call-with-array-data/copy
@@ -175,7 +175,7 @@ shouldn't attempt to modify V."
               ,vector ,start ,end
               (lambda (,v ,s ,e) ,@body))))
 
-#-(or sbcl cmu openmcl allegro)
+#-(or sbcl cmu scl openmcl allegro)
 (progn
   ;; Stolen from f2cl.
   (defun array-data-and-offset (array)
