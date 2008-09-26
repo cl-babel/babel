@@ -117,6 +117,7 @@ are less than UNICODE-CHAR-CODE-LIMIT."
    :code-point-seq-getter string-get
    :code-point-seq-type simple-unicode-string))
 
+#+sbcl
 (defparameter *simple-base-string-vector-mappings*
   (instantiate-concrete-mappings
    ;; :optimize ((speed 3) (safety 0) (debug 0) (compilation-speed 0))
@@ -252,9 +253,10 @@ shouldn't attempt to modify V."
   (declare (optimize (speed 3) (safety 2)))
   (let ((*suppress-character-coding-errors* (not errorp)))
     (etypecase string
-      ;; KLUDGE: on clisp and ccl all strings are BASE-STRING and all characters
-      ;; are BASE-CHAR. Rollback this once they are fixed.
-      #-(or clisp ccl)
+      ;; On some lisps (e.g. clisp and ccl) all strings are BASE-STRING and all
+      ;; characters are BASE-CHAR. So, only enable this optimization for
+      ;; selected targets.
+      #+sbcl
       (simple-base-string
        (unless end
          (setf end (length string)))
