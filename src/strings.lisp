@@ -252,6 +252,9 @@ shouldn't attempt to modify V."
   (declare (optimize (speed 3) (safety 2)))
   (let ((*suppress-character-coding-errors* (not errorp)))
     (etypecase string
+      ;; KLUDGE: on clisp and ccl all strings are BASE-STRING and all characters
+      ;; are BASE-CHAR. Rollback this once they are fixed.
+      #-(or clisp ccl)
       (simple-base-string
        (unless end
          (setf end (length string)))
