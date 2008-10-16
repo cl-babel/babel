@@ -45,6 +45,7 @@
    #:vector-output-stream
    #:vector-input-stream
    #:make-in-memory-output-stream
+   #:make-in-memory-input-stream
    #:get-output-stream-sequence
    #:with-output-to-sequence
    ))
@@ -143,6 +144,20 @@ manually."))
                                           (t (error "Illegal element-type ~S" element-type)))
                           :initial-size initial-buffer-size)
                  :element-type element-type
+                 :external-format (ensure-external-format external-format)))
+
+(defun make-in-memory-input-stream (data &key (element-type :default)
+                                    external-format)
+  "Returns a binary input stream which provides the elements of DATA when read."
+  (declare (optimize speed))
+  (unless external-format
+    (setf external-format *default-character-encoding*))
+  (when (eq element-type :bivalent)
+    (setf element-type :default))
+  (make-instance 'vector-input-stream
+                 :vector data
+                 :element-type element-type
+                 :end 0
                  :external-format (ensure-external-format external-format)))
 
 (defclass vector-stream ()
