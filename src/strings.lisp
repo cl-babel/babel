@@ -265,7 +265,12 @@ shouldn't attempt to modify V."
                                        encoding))
               (bom (bom-vector encoding use-bom))
               (bom-length (length bom))
-              (result (make-array (+ (length string) bom-length)
+              ;; OPTIMIZE: we could use the (length string) information here
+              ;; because it's a simple-base-string where each character <= 127
+              (result (make-array (+ (the array-index
+                                       (funcall (the function (octet-counter mapping))
+                                                string start end -1))
+                                     bom-length)
                                   :element-type '(unsigned-byte 8))))
          (replace result bom)
          (funcall (the function (encoder mapping))
