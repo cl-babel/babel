@@ -347,16 +347,13 @@ manually."))
   "Creates an IN-MEMORY output stream, binds VAR to this stream and then executes the code in BODY.  The stream stores data of type ELEMENT-TYPE \(a subtype of OCTET). The stream is automatically closed on exit from WITH-OUTPUT-TO-SEQUENCE, no matter whether the exit is normal or abnormal. The return value of this macro is a vector \(or a list if AS-LIST is true) containing the octets that were sent to the stream within BODY."
   (multiple-value-bind (body declarations) (parse-body body)
     ;; this is here to stop SBCL complaining about binding them to NIL
-    `(let ((,var ,(when (member var '(*standard-output* *error-output*
-                                      *debug-io*))
-                        var)))
+    `(let ((,var (make-in-memory-output-stream
+                  :element-type ,element-type
+                  :external-format ,external-format
+                  :initial-buffer-size ,initial-buffer-size)))
        ,@declarations
        (unwind-protect
             (progn
-              (setq ,var (make-in-memory-output-stream
-                          :element-type ,element-type
-                          :external-format ,external-format
-                          :initial-buffer-size ,initial-buffer-size))
               ,@body
               (get-output-stream-sequence ,var :return-as ,return-as))
-         (when ,var (close ,var))))))
+         (close ,var)))))
