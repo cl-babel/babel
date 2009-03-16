@@ -40,6 +40,7 @@
      (:file "enc-ebcdic")
      (:file "enc-iso-8859")
      (:file "enc-unicode")
+     (:file "enc-cp1251")
      (:file "external-format")
      (:file "strings")
      (:file "sharp-backslash")))))
