@@ -34,7 +34,7 @@
     ((:file "tests")))))
 
 (defmethod perform ((o test-op) (c (eql (find-system :babel-tests))))
-  (funcall (intern (string '#:run-tests) '#:babel-tests)))
+  (funcall (intern (string '#:run) '#:babel-tests)))
 
 (defmethod operation-done-p ((o test-op) (c (eql (find-system :babel-tests))))
   nil)

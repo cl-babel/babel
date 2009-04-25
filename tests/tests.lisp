@@ -26,10 +26,11 @@
 
 (in-package #:cl-user)
 (defpackage #:babel-tests
-  (:use #:common-lisp #:babel #:babel-encodings #:stefil))
+  (:use #:common-lisp #:babel #:babel-encodings #:stefil)
+  (:export #:run))
 (in-package #:babel-tests)
 
-(defun run-tests ()
+(defun run ()
   (funcall-test-with-feedback-message 'babel-tests))
 
 (defsuite* (babel-tests :in root-suite))
@@ -272,24 +273,28 @@
     (string-to-octets (coerce "abc" 'base-string) :encoding :ascii)
   #(97 98 99))
 
-(defstest utf-8b.1
-    (string-to-octets (coerce #(#\a #\b #\udcf0) 'unicode-string)
-                      :encoding :utf-8b)
-  #(97 98 #xf0))
+;;; For now, disable this tests for CCL. In the future, simply mark
+;;; them as expected failures.
+#-ccl
+(progn
+  (defstest utf-8b.1
+      (string-to-octets (coerce #(#\a #\b #\udcf0) 'unicode-string)
+                        :encoding :utf-8b)
+    #(97 98 #xf0))
 
-(defstest utf-8b.2
-    (octets-to-string (ub8v 97 98 #xcd) :encoding :utf-8b)
-  #(#\a #\b #\udccd))
+  (defstest utf-8b.2
+      (octets-to-string (ub8v 97 98 #xcd) :encoding :utf-8b)
+    #(#\a #\b #\udccd))
 
-(defstest utf-8b.3
-    (octets-to-string (ub8v 97 #xf0 #xf1 #xff #x01) :encoding :utf-8b)
-  #(#\a #\udcf0 #\udcf1 #\udcff #\udc01))
+  (defstest utf-8b.3
+      (octets-to-string (ub8v 97 #xf0 #xf1 #xff #x01) :encoding :utf-8b)
+    #(#\a #\udcf0 #\udcf1 #\udcff #\udc01))
 
-(deftest utf-8b.4 ()
-  (let* ((octets (coerce (loop repeat 8192 collect (random (+ #x82)))
-                         '(array (unsigned-byte 8) (*))))
-         (string (octets-to-string octets :encoding :utf-8b)))
-    (is (equalp octets (string-to-octets string :encoding :utf-8b)))))
+  (deftest utf-8b.4 ()
+    (let* ((octets (coerce (loop repeat 8192 collect (random (+ #x82)))
+                           '(array (unsigned-byte 8) (*))))
+           (string (octets-to-string octets :encoding :utf-8b)))
+      (is (equalp octets (string-to-octets string :encoding :utf-8b))))))
 
 ;;; The following tests have been adapted from SBCL's
 ;;; tests/octets.pure.lisp file.
@@ -348,18 +353,34 @@
                                    :encoding :latin9)
                  l9c))))
 
+;; Expected to fail on CCL. Mark this as an expected failure
+;; when Stefil supports such a feature.
+#-ccl
+(deftest code-char-nilness ()
+  (is (loop for i below unicode-char-code-limit
+            never (null (code-char i)))))
+
 (deftest test-unicode-roundtrip (enc)
   (let ((string (make-string unicode-char-code-limit)))
     (dotimes (i unicode-char-code-limit)
-      (setf (char string i) (code-char i)))
-    (let ((string2 (octets-to-string (string-to-octets string :encoding enc
-                                                       :errorp t)
-                                     :encoding enc :errorp t)))
+      (setf (char string i)
+            (if (or (<= #xD800 i #xDFFF)
+                    (<= #xFDD0 i #xFDEF)
+                    (eql (logand i #xFFFF) #xFFFF)
+                    (eql (logand i #xFFFF) #xFFFE))
+                #\? ; don't try to encode non-characters.
+                (code-char i))))
+    (let ((string2 (octets-to-string
+                    (string-to-octets string :encoding enc :errorp t)
+                    :encoding enc :errorp t)))
       (is (eql (length string2) (length string)))
       (is (string= string string2)))))
 
 (deftest ensure-roundtrip.utf8 ()
   (test-unicode-roundtrip :utf-8))
+
+(deftest ensure-roundtrip.utf16 ()
+  (test-unicode-roundtrip :utf-16))
 
 (deftest ensure-roundtrip.utf32 ()
   (test-unicode-roundtrip :utf-32))
@@ -396,8 +417,8 @@
     (is (equalp (string-to-octets string :encoding :ascii :errorp nil)
                 (make-array 128 :initial-element (char-code #\Sub))))))
 
-;;; The following UTF-8 decoding tests are adapted from
-;;; <http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt>.
+;;;; The following UTF-8 decoding tests are adapted from
+;;;; <http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt>.
 
 (deftest utf8-decode-test (octets expected-results expected-errors)
   (let ((string (octets-to-string (coerce octets '(vector (unsigned-byte 8) *))
@@ -502,7 +523,31 @@
   (utf8-decode-tests #(#xf8 #x80 #x80 #x80 #x80) "?")
   (utf8-decode-tests #(#xfc #x80 #x80 #x80 #x80 #x80) "?"))
 
-;;; End of adapted SBCL tests.
+;;;; End of adapted SBCL tests.
+
+;;; Expected to fail, for now.
+#+#:ignore
+(deftest utf8-illegal-code-positions ()
+  ;; single UTF-16 surrogates
+  (utf8-decode-tests #(#xed #xa0 #x80) "?")
+  (utf8-decode-tests #(#xed #xad #xbf) "?")
+  (utf8-decode-tests #(#xed #xae #x80) "?")
+  (utf8-decode-tests #(#xed #xaf #xbf) "?")
+  (utf8-decode-tests #(#xed #xb0 #x80) "?")
+  (utf8-decode-tests #(#xed #xbe #x80) "?")
+  (utf8-decode-tests #(#xed #xbf #xbf) "?")
+  ;; paired UTF-16 surrogates
+  (utf8-decode-tests #(ed a0 80 ed b0 80) "??")
+  (utf8-decode-tests #(ed a0 80 ed bf bf) "??")
+  (utf8-decode-tests #(ed ad bf ed b0 80) "??")
+  (utf8-decode-tests #(ed ad bf ed bf bf) "??")
+  (utf8-decode-tests #(ed ae 80 ed b0 80) "??")
+  (utf8-decode-tests #(ed ae 80 ed bf bf) "??")
+  (utf8-decode-tests #(ed af bf ed b0 80) "??")
+  (utf8-decode-tests #(ed af bf ed bf bf) "??")
+  ;; other illegal code positions
+  (utf8-decode-tests #(#xef #xbf #xbe) "?")  ; #\uFFFE
+  (utf8-decode-tests #(#xef #xbf #xbf) "?")) ; #\uFFFF
 
 ;;; A list of the ISO-8859 encodings where each element is a cons with
 ;;; the car being a keyword denoting the encoding and the cdr being a
