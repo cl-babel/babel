@@ -12,13 +12,13 @@ export SBCL_OPTIONS ?= --noinform
 .PHONY: all clean html pdf upload
 
 all:
-	mkmanual all $(SYSTEM) $(MANUAL) $(TITLE) $(CSS) $(PACKAGES)
+	texinfo-docstrings all $(SYSTEM) $(MANUAL) $(TITLE) $(CSS) $(PACKAGES)
 
 pdf:
-	mkmanual pdf $(SYSTEM) $(MANUAL) $(TITLE) $(CSS) $(PACKAGES)
+	texinfo-docstrings pdf $(SYSTEM) $(MANUAL) $(TITLE) $(CSS) $(PACKAGES)
 
 html:
-	mkmanual html $(SYSTEM) $(MANUAL) $(TITLE) $(CSS) $(PACKAGES)
+	texinfo-docstrings html $(SYSTEM) $(MANUAL) $(TITLE) $(CSS) $(PACKAGES)
 
 upload:
 #	rsync -av --delete -e ssh manual common-lisp.net:/project/FOO/public_html/
