@@ -2,7 +2,7 @@
 ;;;
 ;;; sharp-backslash.lisp --- Alternative #\ dispatch code.
 ;;;
-;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
+;;; Copyright (C) 2007-2009, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person
 ;;; obtaining a copy of this software and associated documentation
@@ -36,8 +36,10 @@
         (let ((token (let ((*read-base* 16)) (read stream))))
           (if (typep token 'babel-encodings::code-point)
               (code-char token)
-              (simple-reader-error stream "Unrecognized character name: u~A"
-                                   token)))
+              (if *read-suppress*
+                  nil
+                  (simple-reader-error
+                   stream "Unrecognized character name: u~A" token))))
         (funcall original-reader
                  (make-concatenated-stream (make-string-input-stream
                                             (string 1st-char))

@@ -2,7 +2,7 @@
 ;;;
 ;;; tests.lisp --- Unit and regression tests for Babel.
 ;;;
-;;; Copyright (C) 2007-2008, Luis Oliveira  <loliveira@common-lisp.net>
+;;; Copyright (C) 2007-2009, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person
 ;;; obtaining a copy of this software and associated documentation
@@ -248,6 +248,20 @@
 (deftest sharp-backslash.2 ()
   (signals reader-error (with-sharp-backslash-syntax
                           (read-from-string "#\\u12zz"))))
+
+(deftest test-read-from-string (string object position)
+  "Test that (read-from-string STRING) returns values OBJECT and POSITION."
+  (multiple-value-bind (obj pos)
+      (read-from-string string)
+    (is (eql object obj))
+    (is (eql position pos))))
+
+;;; RT: our #\ reader didn't honor *READ-SUPPRESS*.
+(deftest sharp-backslash.3 ()
+  (with-sharp-backslash-syntax
+    (let ((*read-suppress* t))
+      (test-read-from-string "#\\ujunk" nil 7)
+      (test-read-from-string "#\\u12zz" nil 7))))
 
 ;;; RT: the slow implementation of with-simple-vector was buggy.
 (defstest string-to-octets.1
