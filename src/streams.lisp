@@ -35,6 +35,7 @@
 ;; TODO
 ;; - filter-stream types/mixins that can wrap a binary stream and turn it into a bivalent/character stream
 ;; - in-memory input streams with file-position similar to in-memory output streams
+;; - in-memory input/output streams?
 
 (in-package :babel)
 
@@ -48,6 +49,7 @@
    #:make-in-memory-input-stream
    #:get-output-stream-sequence
    #:with-output-to-sequence
+   #:with-input-from-sequence
    ))
 
 (in-package :babel-streams)
@@ -157,7 +159,7 @@ manually."))
   (make-instance 'vector-input-stream
                  :vector data
                  :element-type element-type
-                 :end 0
+                 :end (length data)
                  :external-format (ensure-external-format external-format)))
 
 (defclass vector-stream ()
@@ -243,6 +245,11 @@ manually."))
            (incf (vector-stream-index stream))
            (aref (vector-stream-vector stream) index))
           (t :eof))))
+
+#+nil
+(defmethod stream-read-char ((stream vector-input-stream))
+  ;; TODO
+  )
 
 (defmethod stream-listen ((stream vector-input-stream))
   "Checking whether INDEX is beyond END."
@@ -344,7 +351,7 @@ manually."))
                                         (external-format '*default-character-encoding*)
                                         initial-buffer-size)
                                    &body body)
-  "Creates an IN-MEMORY output stream, binds VAR to this stream and then executes the code in BODY.  The stream stores data of type ELEMENT-TYPE \(a subtype of OCTET). The stream is automatically closed on exit from WITH-OUTPUT-TO-SEQUENCE, no matter whether the exit is normal or abnormal. The return value of this macro is a vector \(or a list if AS-LIST is true) containing the octets that were sent to the stream within BODY."
+  "Creates an IN-MEMORY output stream, binds VAR to this stream and then executes the code in BODY. The stream stores data of type ELEMENT-TYPE \(a subtype of OCTET). The stream is automatically closed on exit from WITH-OUTPUT-TO-SEQUENCE, no matter whether the exit is normal or abnormal. The return value of this macro is a vector \(or a list if AS-LIST is true) containing the octets that were sent to the stream within BODY."
   (multiple-value-bind (body declarations) (parse-body body)
     ;; this is here to stop SBCL complaining about binding them to NIL
     `(let ((,var (make-in-memory-output-stream
@@ -356,4 +363,19 @@ manually."))
             (progn
               ,@body
               (get-output-stream-sequence ,var :return-as ,return-as))
+         (close ,var)))))
+
+(defmacro with-input-from-sequence ((var data &key (element-type '':default)
+                                         (external-format '*default-character-encoding*))
+                                    &body body)
+  "Creates an IN-MEMORY input stream that will return the values available in DATA, binds VAR to this stream and then executes the code in BODY. The stream stores data of type ELEMENT-TYPE \(a subtype of OCTET). The stream is automatically closed on exit from WITH-INPUT-FROM-SEQUENCE, no matter whether the exit is normal or abnormal. The return value of this macro is the return value of BODY."
+  (multiple-value-bind (body declarations) (parse-body body)
+    ;; this is here to stop SBCL complaining about binding them to NIL
+    `(let ((,var (make-in-memory-input-stream ,data
+                                              :element-type ,element-type
+                                              :external-format ,external-format)))
+       ,@declarations
+       (unwind-protect
+            (progn
+              ,@body)
          (close ,var)))))
