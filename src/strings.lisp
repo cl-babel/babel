@@ -244,7 +244,8 @@ shouldn't attempt to modify V."
                      (t (get-character-encoding encoding)))))
           (if (or (eq use-bom t)
                   (and (eq use-bom :default) (enc-use-bom enc)))
-              (enc-bom-encoding enc)
+              ;; VALUES avoids a "type assertion too complex to check" note.
+              (values (enc-bom-encoding enc))
               #())))))
 
 (defun string-to-octets (string &key (encoding *default-character-encoding*)
