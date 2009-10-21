@@ -343,7 +343,8 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 
 ;;;; Utilities used in enc-*.lisp
 
-(defconstant +sub+ #x1a "ASCII substitution character code point.")
+(defconstant +default-substitution-code-point+ #x1a
+  "Default ASCII substitution character code point used in case of an encoding/decoding error.")
 
 ;;; We're converting between objects of the (UNSIGNED-BYTE 8) and
 ;;; (MOD #x110000) types which are aliased here to UB8 and CODE-POINT
@@ -376,7 +377,8 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
                      ;; this should probably be a function...
                      ((handle-error (&optional (c ''character-encoding-error))
                         `(encoding-error
-                          ,',',code ,',',encoding ,',',src ,',',i +sub+ ,c)))
+                          ,',',code ,',',encoding ,',',src ,',',i
+                          +default-substitution-code-point+ ,c)))
                    (let ((,',code (,,s-getter ,',src ,',i)))
                      (declare (type code-point ,',code))
                      (block ,',encoding ,@',body)))
@@ -401,7 +403,7 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
                      ((handle-error (&optional (c ''character-decoding-error))
                         `(decoding-error
                           (vector ,',',octet) ,',',encoding ,',',src ,',',i
-                          +sub+ ,c)))
+                          +default-substitution-code-point+ ,c)))
                    (let ((,',octet (,,s-getter ,',src ,',i)))
                      (declare (type ub8 ,',octet))
                      (block ,',encoding ,@',body)))
@@ -468,8 +470,9 @@ used.")
                      (character-coding-error-encoding c)))))
 
 (declaim (inline encoding-error))
-(defun encoding-error (code enc buf pos
-                       &optional (sub +sub+) (e 'character-encoding-error))
+(defun encoding-error (code enc buf pos &optional
+                       (sub +default-substitution-code-point+)
+                       (e 'character-encoding-error))
   (unless *suppress-character-coding-errors*
     (error e :encoding enc :buffer buf :position pos :code code))
   sub)
@@ -492,8 +495,9 @@ of variable-width character encodings."))
    "Signalled when the character being decoded is out of range."))
 
 (declaim (inline decoding-error))
-(defun decoding-error (octets enc buf pos
-                       &optional (sub +sub+) (e 'character-decoding-error))
+(defun decoding-error (octets enc buf pos &optional
+                       (sub +default-substitution-code-point+)
+                       (e 'character-decoding-error))
   (unless *suppress-character-coding-errors*
     (error e :octets octets :encoding enc :buffer buf :position pos))
   sub)
