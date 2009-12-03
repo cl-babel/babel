@@ -116,6 +116,9 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
   (or (gethash name *character-encodings*)
       (error "Unknown character encoding: ~S" name)))
 
+(defmethod ambiguous-encoding-p ((encoding symbol))
+  (ambiguous-encoding-p (get-character-encoding encoding)))
+
 (defun notice-character-encoding (enc)
   (pushnew (enc-name enc) *supported-character-encodings*)
   (dolist (kw (cons (enc-name enc) (enc-aliases enc)))
