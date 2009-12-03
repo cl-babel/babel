@@ -380,7 +380,7 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
                      (declare (type code-point ,',code))
                      (block ,',encoding ,@',body)))
                  ,',dest ,',di)
-                finally (return (the fixnum (- ,',d-start ,',di))))))))
+                finally (return (the fixnum (- ,',di ,',d-start))))))))
 
 ;;; The decoder version of the above macro.
 (defmacro define-unibyte-decoder (encoding (octet) &body body)
@@ -405,7 +405,7 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
                      (declare (type ub8 ,',octet))
                      (block ,',encoding ,@',body)))
                  ,',dest ,',di)
-                finally (return (the fixnum (- ,',d-start ,',di))))))))
+                finally (return (the fixnum (-  ,',di ,',d-start))))))))
 
 ;;;; Error Conditions
 ;;;

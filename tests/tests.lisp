@@ -806,3 +806,28 @@
   (signals character-out-of-range
     (octets-to-string (ub8v 0 0 #xfe #xff 0 #x11 0 0)
                       :encoding :utf-32 :errorp t)))
+
+;;; RT: encoders and decoders were returning bogus values.
+(deftest encoder/decoder-retvals (encoding &optional (test-string "abc"))
+  (let* ((mapping (lookup-mapping babel::*string-vector-mappings* encoding))
+         (strlen (length test-string))
+         ;; encoding
+         (octet-precount (funcall (octet-counter mapping)
+                                  test-string 0 strlen -1))
+         (array (make-array octet-precount :element-type '(unsigned-byte 8)))
+         (encoded-octet-count (funcall (encoder mapping)
+                                       test-string 0 strlen array 0))
+         ;; decoding
+         (string (make-string strlen))
+         (char-precount (funcall (code-point-counter mapping)
+                                 array 0 octet-precount -1))
+         (char-count (funcall (decoder mapping)
+                              array 0 octet-precount string 0)))
+    (is (= octet-precount encoded-octet-count))
+    (is (= char-precount char-count))
+    (is (string= test-string string))))
+
+(deftest encoder-and-decoder-return-values ()
+  (mapcar 'encoder/decoder-retvals
+          (remove-if 'ambiguous-encoding-p
+                     (list-character-encodings))))
