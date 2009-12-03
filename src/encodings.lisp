@@ -277,44 +277,42 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
      octet-seq-getter octet-seq-setter octet-seq-type
      code-point-seq-getter code-point-seq-setter code-point-seq-type
      (instantiate-decoders t))
-  `(locally (declare #+sbcl(sb-ext:muffle-conditions sb-ext:compiler-note))
-     (let ((ht (make-hash-table :test 'eq)))
-       (declare (optimize ,@optimize))
-       (flet ((notice-mapping (encoding-name cm)
-                (let* ((encoding (get-character-encoding encoding-name))
-                       (aliases (enc-aliases encoding)))
-                  (dolist (kw (cons (enc-name encoding) aliases))
-                    (setf (gethash kw ht) cm)))))
-         ,@(loop
-              :for encoding-name :in encodings
-              :for encoding = (get-character-encoding encoding-name)
-              :for am = (gethash encoding-name *abstract-mappings*)
-              :collect
-              `(let ((cm (make-instance 'concrete-mapping)))
-                 (setf (encoder cm)
-                       ,(instantiate-encoder encoding am
-                                             code-point-seq-getter
-                                             code-point-seq-type
-                                             octet-seq-setter
-                                             octet-seq-type))
-                 ,(when instantiate-decoders
-                        `(progn
-                           (setf (decoder cm)
-                                 ,(instantiate-decoder encoding am
-                                                       octet-seq-getter
-                                                       octet-seq-type
-                                                       code-point-seq-setter
-                                                       code-point-seq-type))
-                           (setf (code-point-counter cm)
-                                 ,(instantiate-code-point-counter encoding am
-                                                                  octet-seq-getter
-                                                                  octet-seq-type))))
-                 (setf (octet-counter cm)
-                       ,(instantiate-octet-counter encoding am
-                                                   code-point-seq-getter
-                                                   code-point-seq-type))
-                 (notice-mapping ,encoding-name cm))))
-       ht)))
+  `(let ((ht (make-hash-table :test 'eq)))
+     (declare (optimize ,@optimize)
+              #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note))
+     (flet ((notice-mapping (encoding-name cm)
+              (let* ((encoding (get-character-encoding encoding-name))
+                     (aliases (enc-aliases encoding)))
+                (dolist (kw (cons (enc-name encoding) aliases))
+                  (setf (gethash kw ht) cm)))))
+       ,@(loop for encoding-name in encodings
+               for encoding = (get-character-encoding encoding-name)
+               for am = (gethash encoding-name *abstract-mappings*)
+               collect
+               `(let ((cm (make-instance 'concrete-mapping)))
+                  (setf (encoder cm)
+                        ,(instantiate-encoder encoding am
+                                              code-point-seq-getter
+                                              code-point-seq-type
+                                              octet-seq-setter
+                                              octet-seq-type))
+                  ,(when instantiate-decoders
+                     `(progn
+                        (setf (decoder cm)
+                              ,(instantiate-decoder encoding am
+                                                    octet-seq-getter
+                                                    octet-seq-type
+                                                    code-point-seq-setter
+                                                    code-point-seq-type))
+                        (setf (code-point-counter cm)
+                              ,(instantiate-code-point-counter
+                                encoding am octet-seq-getter octet-seq-type))))
+                  (setf (octet-counter cm)
+                        ,(instantiate-octet-counter encoding am
+                                                    code-point-seq-getter
+                                                    code-point-seq-type))
+                  (notice-mapping ,encoding-name cm))))
+     ht))
 
 ;;; debugging stuff
 

@@ -268,11 +268,12 @@ shouldn't attempt to modify V."
               (bom-length (length bom))
               ;; OPTIMIZE: we could use the (length string) information here
               ;; because it's a simple-base-string where each character <= 127
-              (result (make-array (+ (the array-index
-                                       (funcall (the function (octet-counter mapping))
-                                                string start end -1))
-                                     bom-length)
-                                  :element-type '(unsigned-byte 8))))
+              (result (make-array
+                       (+ (the array-index
+                            (funcall (the function (octet-counter mapping))
+                                     string start end -1))
+                          bom-length)
+                       :element-type '(unsigned-byte 8))))
          (replace result bom)
          (funcall (the function (encoder mapping))
                   string start end result bom-length)
@@ -288,11 +289,12 @@ shouldn't attempt to modify V."
          (let* ((mapping (lookup-mapping *string-vector-mappings* encoding))
                 (bom (bom-vector encoding use-bom))
                 (bom-length (length bom))
-                (result (make-array (+ (the array-index
-                                         (funcall (the function (octet-counter mapping))
-                                                  string start end -1))
-                                       bom-length)
-                                    :element-type '(unsigned-byte 8))))
+                (result (make-array
+                         (+ (the array-index
+                              (funcall (the function (octet-counter mapping))
+                                       string start end -1))
+                            bom-length)
+                         :element-type '(unsigned-byte 8))))
            (replace result bom)
            (funcall (the function (encoder mapping))
                     string start end result bom-length)
