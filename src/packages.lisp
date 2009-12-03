@@ -45,6 +45,7 @@
    #:enc-bom-encoding
    #:enc-nul-encoding
    #:enc-default-replacement
+   #:ambiguous-encoding-p
    ;; concrete mappings
    #:instantiate-concrete-mappings
    #:encoder

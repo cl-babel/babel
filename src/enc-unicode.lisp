@@ -532,7 +532,8 @@ written in native byte-order with a leading byte-order mark."
   :use-bom #+big-endian :utf-16be #+little-endian :utf-16le
   :bom-encoding #+big-endian #(#xfe #xff) #+little-endian #(#xff #xfe)
   :nul-encoding #(0 0)
-  :default-replacement #xfffd)
+  :default-replacement #xfffd
+  :ambiguous #+little-endian t #+big-endian nil)
 
 (define-octet-counter :utf-16 (getter type)
   `(utf16-octet-counter ,getter ,type))
@@ -649,7 +650,8 @@ order with a leading byte-order mark."
   :bom-encoding
   #+big-endian #(#x00 #x00 #xfe #xff)
   #+little-endian #(#xff #xfe #x00 #x00)
-  :nul-encoding #(0 0 0 0))
+  :nul-encoding #(0 0 0 0)
+  :ambiguous #+little-endian t #+big-endian nil)
 
 (define-code-point-counter :utf-32 (getter type)
   `(named-lambda utf-32-code-point-counter (seq start end max)

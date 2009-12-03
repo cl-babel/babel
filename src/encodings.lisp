@@ -65,7 +65,12 @@
    ;; Preferred replacement character code point.
    (default-replacement
     :initarg :default-replacement :reader enc-default-replacement
-    :initform #x1a)))
+    :initform #x1a)
+   ;; Does VALID-STRING => OCTETS => STRING2 guarantee a valid
+   ;; STRING2? UTF-{16,32} on little-endian plaforms don't because
+   ;; they assume different endianness on each direction.
+   (ambiguous
+    :initarg :ambiguous :reader ambiguous-encoding-p :initform nil)))
 
 ;;; I'm too lazy to write all the identical limits twice.
 (defmethod initialize-instance :after ((enc character-encoding)
