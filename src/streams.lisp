@@ -42,10 +42,10 @@
 ;;;   output streams
 ;;; - in-memory input/output streams?
 
-(in-package :babel)
+(in-package #:babel)
 
-(defpackage :babel-streams
-  (:use :common-lisp :babel :trivial-gray-streams :alexandria)
+(defpackage #:babel-streams
+  (:use #:common-lisp #:babel #:trivial-gray-streams #:alexandria)
   (:export
    #:in-memory-stream
    #:vector-output-stream
@@ -54,8 +54,7 @@
    #:make-in-memory-input-stream
    #:get-output-stream-sequence
    #:with-output-to-sequence
-   #:with-input-from-sequence
-   ))
+   #:with-input-from-sequence))
 
 (in-package :babel-streams)
 
