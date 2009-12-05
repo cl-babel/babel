@@ -347,6 +347,11 @@ contains the octes that were actually output."
      (extend-vector-output-stream-buffer sequence stream :start start :end end)))
   sequence)
 
+(defmethod stream-line-column ((stream vector-output-stream))
+  "Dummy line-column method that always returns NIL. Needed for
+character output streams."
+  nil)
+
 (defmethod stream-file-position ((stream vector-stream))
   "Simply returns the index into the underlying vector."
   (declare (optimize speed))
