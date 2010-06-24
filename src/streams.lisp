@@ -63,6 +63,8 @@
                  stream-accepts-octets? vector-extend
                  extend-vector-output-stream-buffer))
 
+(defgeneric get-output-stream-sequence (stream &key &allow-other-keys))
+
 ;;;; Some utilities (on top due to inlining)
 
 (defun vector-extend (extension vector &key (start 0) (end (length extension)))
