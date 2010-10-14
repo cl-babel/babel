@@ -26,7 +26,7 @@
 
 (defsystem babel-tests
   :description "Unit tests for Babel."
-  :depends-on (babel stefil)
+  :depends-on (babel hu.dwim.stefil)
   :components
   ((:module "tests"
     :serial t

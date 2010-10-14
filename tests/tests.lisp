@@ -26,7 +26,7 @@
 
 (in-package #:cl-user)
 (defpackage #:babel-tests
-  (:use #:common-lisp #:babel #:babel-encodings #:stefil)
+  (:use #:common-lisp #:babel #:babel-encodings #:hu.dwim.stefil)
   (:export #:run))
 (in-package #:babel-tests)
 
@@ -53,9 +53,9 @@
      (returns ,form ,@(mapcar (lambda (x) `',x) return-values))))
 
 (defun fail (control-string &rest arguments)
-  (stefil::record-failure 'stefil::failed-assertion
-                          :format-control control-string
-                          :format-arguments arguments))
+  (hu.dwim.stefil::record-failure 'hu.dwim.stefil::failed-assertion
+                                  :format-control control-string
+                                  :format-arguments arguments))
 
 (defun expected (expected &key got)
   (fail "expected ~A, got ~A instead" expected got))
