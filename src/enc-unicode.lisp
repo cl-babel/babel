@@ -515,6 +515,120 @@ code points for each invalid byte."
            (the (unsigned-byte 10)
              (- ,u2 #xdc00)))))))
 
+(defmacro define-utf-16 (name &optional endianness)
+  (check-type endianness (or null (eql :be) (eql :le)))
+  (check-type name keyword)
+  (let ((swap-var (gensym "SWAP"))
+        (code-point-counter-name
+          (intern (format nil "~a-CODE-POINT-COUNTER" name)))
+        (encoder-name (intern (format nil "~a-ENCODER" name)))
+        (decoder-name (intern (format nil "~a-DECODER" name))))
+    (labels ((make-bom-check-form (end start getter seq)
+               (if (null endianness)
+                 ``((,',swap-var
+                      (when (> ,,end ,,start)
+                        (case (,,getter ,,seq ,,start 2 :ne)
+                          (#.+byte-order-mark-code+ (incf ,,start 2) nil)
+                          (#.+swapped-byte-order-mark-code+ (incf ,,start 2) t)
+                          (t #+little-endian t)))))
+                 '()))
+             (make-getter-form (getter src i)
+               (case endianness
+                 (:le ``(,,getter ,,src ,,i 2 :le))
+                 (:be ``(,,getter ,,src ,,i 2 :be))
+                 (T ``(if ,',swap-var
+                        (,,getter ,,src ,,i 2 :re)
+                        (,,getter ,,src ,,i 2 :ne)))))
+             (make-setter-form (setter code dest di)
+               (case endianness
+                 (:be ``(,,setter ,,code ,,dest ,,di 2 :be))
+                 (:le ``(,,setter ,,code ,,dest ,,di 2 :le))
+                 (T ``(,,setter ,,code ,,dest ,,di 2 :ne)))))
+      `(progn
+         (define-octet-counter ,name (getter type)
+           `(utf16-octet-counter ,getter ,type))
+         (define-code-point-counter ,name (getter type)
+           `(named-lambda ,',code-point-counter-name (seq start end max)
+              (declare (type ,type seq) (fixnum start end max))
+              (let* ,,(make-bom-check-form ''end ''start 'getter ''seq)
+                (loop with count fixnum = 0
+                  with i fixnum = start
+                  while (<= i (- end 2)) do
+                  (let* ((code ,,(make-getter-form 'getter ''seq ''i))
+                         (next-i (+ i (if (or (< code #xd800) (>= code #xdc00))
+                                        2
+                                        4))))
+                    (declare (type (unsigned-byte 16) code) (fixnum next-i))
+                    (cond
+                      ((> next-i end)
+                       (decoding-error
+                         (vector (,getter seq i) (,getter seq (1+ i)))
+                         ,',name seq i nil 'end-of-input-in-character)
+                       (return (values count i)))
+                      (t
+                        (setq i next-i
+                              count (1+ count))
+                        (when (and (plusp max) (= count max))
+                          (return (values count i))))))
+                  finally (progn
+                            (assert (= i end))
+                            (return (values count i)))))))
+         (define-encoder ,name (getter src-type setter dest-type)
+           `(named-lambda ,',encoder-name (src start end dest d-start)
+              (declare (type ,src-type src)
+                       (type ,dest-type dest)
+                       (fixnum start end d-start))
+              (loop with di fixnum = d-start
+                for i fixnum from start below end
+                for code of-type code-point = (,getter src i)
+                for high-bits fixnum = (- code #x10000) do
+                (cond ((< high-bits 0)
+                       ,,(make-setter-form 'setter ''code ''dest ''di)
+                       (incf di 2))
+                      (t
+                        ,,(make-setter-form
+                              'setter ''(logior #xd800 (f-ash high-bits -10))
+                            ''dest ''di)
+                        ,,(make-setter-form
+                              'setter ''(logior #xdc00 (f-logand high-bits #x3ff))
+                            ''dest ''(+ di 2))
+                        (incf di 4)))
+                finally (return (the fixnum (- di d-start))))))
+         (define-decoder ,name (getter src-type setter dest-type)
+           `(named-lambda ,',decoder-name (src start end dest d-start)
+              (declare (type ,src-type src)
+                       (type ,dest-type dest)
+                       (fixnum start end d-start))
+              (let ,,(make-bom-check-form ''end ''start 'getter ''src)
+                (loop with i fixnum = start
+                  for di fixnum from d-start
+                  until (= i end) do
+                  (let ((u1 ,,(make-getter-form 'getter ''src ''i)))
+                    (declare (type (unsigned-byte 16) u1))
+                    (incf i 2)
+                    (,setter (cond
+                               ((or (< u1 #xd800) (>= u1 #xe000)) ; 2 octets
+                                u1)
+                               ((< u1 #xdc00) ; 4 octets
+                                (let ((u2 ,,(make-getter-form 'getter ''src ''i)))
+                                  (declare (type (unsigned-byte 16) u2))
+                                  (incf i 2)
+                                  (if (and (>= u2 #xdc00) (< u2 #xe000))
+                                    (utf-16-combine-surrogate-pairs u1 u2)
+                                    (decoding-error
+                                      (vector (,getter src (- i 4))
+                                              (,getter src (- i 3))
+                                              (,getter src (- i 2))
+                                              (,getter src (- i 1)))
+                                      ,',name src i +repl+))))
+                               (t
+                                 (decoding-error (vector (,getter src (- i 2))
+                                                         (,getter src (- i 1)))
+                                                 ,',name src i +repl+)))
+                             dest di))
+                  finally (return (the fixnum (- di d-start)))))))
+         ',name))))
+
 (define-character-encoding :utf-16
     "A 16-bit, variable-length encoding in which characters with
 code points less than #x10000 can be encoded in a single 16-bit
@@ -535,102 +649,128 @@ written in native byte-order with a leading byte-order mark."
   :default-replacement #xfffd
   :ambiguous #+little-endian t #+big-endian nil)
 
-(define-octet-counter :utf-16 (getter type)
-  `(utf16-octet-counter ,getter ,type))
+(define-utf-16 :utf-16)
 
-(define-code-point-counter :utf-16 (getter type)
-  `(named-lambda utf-16-code-point-counter (seq start end max)
-     (declare (type ,type seq) (fixnum start end max))
-     (let* ((swap (when (> end start)
-                    (case (,getter seq start 2)
-                      (#.+byte-order-mark-code+ (incf start 2) nil)
-                      (#.+swapped-byte-order-mark-code+ (incf start 2) t)
-                      (t #+little-endian t)))))
-       (loop with count fixnum = 0
-             with i fixnum = start
-             while (<= i (- end 2)) do
-             (let* ((code (if swap
-                              (,getter seq i 2 :re)
-                              (,getter seq i 2)))
-                    (next-i (+ i (if (or (< code #xd800) (>= code #xdc00))
-                                     2
-                                     4))))
-               (declare (type (unsigned-byte 16) code) (fixnum next-i))
-               (cond
-                 ((> next-i end)
-                  (decoding-error
-                   (vector (,getter seq i) (,getter seq (1+ i)))
-                   :utf-16 seq i nil 'end-of-input-in-character)
-                  (return (values count i)))
-                 (t
-                  (setq i next-i
-                        count (1+ count))
-                  (when (and (plusp max) (= count max))
-                    (return (values count i))))))
-             finally (progn
-                       (assert (= i end))
-                       (return (values count i)))))))
+(define-character-encoding :utf-16le
+    "A 16-bit, variable-length encoding in which characters with
+code points less than #x10000 can be encoded in a single 16-bit
+word and characters with larger codes can be encoded in a pair of
+16-bit words.  The data is assumed to be in little-endian order.  Output is
+written in little-endian byte-order without a leading byte-order mark."
+  :aliases '(:utf-16/le)
+  :max-units-per-char 2
+  :code-unit-size 16
+  :native-endianness #+little-endian t #+big-endian nil
+  :decode-literal-code-unit-limit #xd800
+  :encode-literal-code-unit-limit #x10000
+  :nul-encoding #(0 0)
+  :default-replacement #xfffd)
 
-(define-encoder :utf-16 (getter src-type setter dest-type)
-  `(named-lambda utf-16-encoder (src start end dest d-start)
-     (declare (type ,src-type src)
-              (type ,dest-type dest)
-              (fixnum start end d-start))
-     (loop with di fixnum = d-start
-           for i fixnum from start below end
-           for code of-type code-point = (,getter src i)
-           for high-bits fixnum = (- code #x10000) do
-           (cond ((< high-bits 0)
-                  (,setter code dest di 2)
-                  (incf di 2))
-                 (t
-                  (,setter (logior #xd800 (f-ash high-bits -10)) dest di 2)
-                  (,setter (logior #xdc00 (f-logand high-bits #x3ff))
-                           dest (+ di 2) 2)
-                  (incf di 4)))
-           finally (return (the fixnum (- di d-start))))))
+(define-utf-16 :utf-16le :le)
 
-(define-decoder :utf-16 (getter src-type setter dest-type)
-  `(named-lambda utf-16-decoder (src start end dest d-start)
-     (declare (type ,src-type src)
-              (type ,dest-type dest)
-              (fixnum start end d-start))
-     (let ((swap (when (> end start)
-                   (case (,getter src start 2)
-                     (#.+byte-order-mark-code+ (incf start 2) nil)
-                     (#.+swapped-byte-order-mark-code+ (incf start 2) t)
-                     (t #+little-endian t)))))
-       (loop with i fixnum = start
-             for di fixnum from d-start
-             until (= i end) do
-             (let ((u1 (if swap
-                           (,getter src i 2 :re)
-                           (,getter src i 2))))
-               (declare (type (unsigned-byte 16) u1))
-               (incf i 2)
-               (,setter (cond
-                          ((or (< u1 #xd800) (>= u1 #xe000)) ; 2 octets
-                           u1)
-                          ((< u1 #xdc00) ; 4 octets
-                           (let ((u2 (if swap
-                                         (,getter src i 2 :re)
-                                         (,getter src i 2))))
-                             (declare (type (unsigned-byte 16) u2))
-                             (incf i 2)
-                             (if (and (>= u2 #xdc00) (< u2 #xe000))
-                                 (utf-16-combine-surrogate-pairs u1 u2)
-                                 (decoding-error
-                                  (vector (,getter src (- i 4))
-                                          (,getter src (- i 3))
-                                          (,getter src (- i 2))
-                                          (,getter src (- i 1)))
-                                  :utf-16 src i +repl+))))
-                          (t
-                           (decoding-error (vector (,getter src (- i 2))
-                                                   (,getter src (- i 1)))
-                                           :utf-16 src i +repl+)))
-                        dest di))
-             finally (return (the fixnum (- di d-start)))))))
+(define-character-encoding :utf-16be
+    "A 16-bit, variable-length encoding in which characters with
+code points less than #x10000 can be encoded in a single 16-bit
+word and characters with larger codes can be encoded in a pair of
+16-bit words.  The data is assumed to be in big-endian order.  Output is
+written in big-endian byte-order without a leading byte-order mark."
+  :aliases '(:utf-16/be)
+  :max-units-per-char 2
+  :code-unit-size 16
+  :native-endianness #+little-endian nil #+big-endian t
+  :decode-literal-code-unit-limit #xd800
+  :encode-literal-code-unit-limit #x10000
+  :nul-encoding #(0 0)
+  :default-replacement #xfffd)
+
+(define-utf-16 :utf-16be :be)
+
+(defmacro define-ucs (name bytes &optional endianness (limit #x110000))
+  (check-type name keyword)
+  (check-type bytes (or (eql 2) (eql 4)))
+  (check-type endianness (or null (eql :le) (eql :be)))
+  (let ((swap-var (gensym "SWAP"))
+        (code-point-counter-name
+          (intern (format nil "~a-CODE-POINT-COUNTER" name)))
+        (encoder-name
+          (intern (format nil "~a-ENCODER" name)))
+        (decoder-name
+          (intern (format nil "~a-DECODER" name))))
+    (labels ((make-bom-check-form (end start getter src)
+               (if (null endianness)
+                 ``(when (not (zerop (- ,,end ,,start)))
+                     (case (,,getter ,,src 0 ,',bytes :ne)
+                       (#.+byte-order-mark-code+
+                         (incf ,,start ,',bytes) nil)
+                       (#.+swapped-byte-order-mark-code-32+
+                        (incf ,,start ,',bytes) T)
+                       (T #+little-endian T)))
+                 '()))
+             (make-setter-form (setter code dest di)
+               ``(,,setter ,,code ,,dest ,,di ,',bytes
+                           ,',(or endianness :ne)))
+             (make-getter-form (getter src i)
+               (if (null endianness)
+                 ``(if ,',swap-var
+                     (,,getter ,,src ,,i ,',bytes :re)
+                     (,,getter ,,src ,,i ,',bytes :ne))
+                 ``(,,getter ,,src ,,i ,',bytes ,',endianness))))
+      `(progn
+         (define-code-point-counter ,name (getter type)
+           `(named-lambda ,',code-point-counter-name (seq start end max)
+              (declare (type ,type seq) (fixnum start end max))
+              ;; check for bom
+              ,,(make-bom-check-form ''end ''start 'getter ''seq)
+              (multiple-value-bind (count rem)
+                  (floor (- end start) ,',bytes)
+                (cond
+                  ((and (plusp max) (> count max))
+                   (values max (the fixnum (+ start (* ,',bytes max)))))
+                  (t
+                    ;; check for incomplete last character
+                    (unless (zerop rem)
+                      (let ((vector (make-array ,',bytes :fill-pointer 0)))
+                        (dotimes (i rem)
+                          (vector-push (,getter seq (+ i (- end rem))) vector))
+                        (decoding-error vector ,',name seq (the fixnum (- end rem)) nil
+                                        'end-of-input-in-character)
+                        (decf end rem)))
+                    (values count end))))))
+         (define-encoder ,name (getter src-type setter dest-type)
+           `(named-lambda ,',encoder-name (src start end dest d-start)
+              (declare (type ,src-type src)
+                       (type ,dest-type dest)
+                       (fixnum start end d-start))
+              (loop for i fixnum from start below end
+                for di fixnum from d-start by ,',bytes
+                for code of-type code-point = (,getter src i) do
+                (if (>= code ,',limit)
+                  (encoding-error code ,',name src i +repl+)
+                  ,,(make-setter-form 'setter ''code ''dest ''di))
+                finally (return (the fixnum (- di d-start))))))
+         (define-decoder ,name (getter src-type setter dest-type)
+           `(named-lambda ,',decoder-name (src start end dest d-start)
+              (declare (type ,src-type src)
+                       (type ,dest-type dest)
+                       (fixnum start end d-start))
+              (let ((,',swap-var ,,(make-bom-check-form ''end ''start 'getter ''src)))
+                (declare (ignorable ,',swap-var))
+                (loop for i fixnum from start below end by ,',bytes
+                  for di from d-start
+                  do (,setter (let ((unit ,,(make-getter-form 'getter ''src ''i)))
+                                (if (>= unit ,',limit)
+                                  (decoding-error
+                                    (vector (,getter src i)
+                                            (,getter src (+ i 1))
+                                            ,@,(if (= bytes 4)
+                                                 ``((,getter src (+ i 2))
+                                                    (,getter src (+ i 3)))))
+                                    ,',name src i +repl+
+                                    'character-out-of-range)
+                                  unit))
+                              dest di)
+                  finally (return (the fixnum (- di d-start)))))))
+         ',name))))
 
 ;;;; UTF-32
 
@@ -642,6 +782,7 @@ a byte-order-mark character (#\u+feff) prepended to the data; in
 the absence of such a character on input, input data is assumed
 to be in big-endian order.  Output is written in native byte
 order with a leading byte-order mark."
+  :aliases '(:ucs-4)
   :max-units-per-char 1
   :code-unit-size 32
   :native-endianness t ; not necessarily true when decoding
@@ -653,67 +794,84 @@ order with a leading byte-order mark."
   :nul-encoding #(0 0 0 0)
   :ambiguous #+little-endian t #+big-endian nil)
 
-(define-code-point-counter :utf-32 (getter type)
-  `(named-lambda utf-32-code-point-counter (seq start end max)
-     (declare (type ,type seq) (fixnum start end max))
-     ;; check for bom
-     (when (and (/= start end)
-                (case (,getter seq 0 4)
-                  ((#.+byte-order-mark-code+
-                    #.+swapped-byte-order-mark-code-32+) t)))
-       (incf start 4))
-     (multiple-value-bind (count rem)
-         (floor (- end start) 4)
-       (cond
-         ((and (plusp max) (> count max))
-          (values max (the fixnum (+ start (* 4 max)))))
-         (t
-          ;; check for incomplete last character
-          (unless (zerop rem)
-            (let ((vector (make-array 4 :fill-pointer 0)))
-              (dotimes (i rem)
-                (vector-push (,getter seq (+ i (- end rem))) vector))
-              (decoding-error vector :utf-32 seq (the fixnum (- end rem)) nil
-                              'end-of-input-in-character)
-              (decf end rem)))
-          (values count end))))))
+(define-ucs :utf-32 4)
 
-(define-encoder :utf-32 (getter src-type setter dest-type)
-  `(named-lambda utf-32-encoder (src start end dest d-start)
-     (declare (type ,src-type src)
-              (type ,dest-type dest)
-              (fixnum start end d-start))
-     (loop for i fixnum from start below end
-           for di fixnum from d-start by 4 do
-           (,setter (,getter src i) dest di 4)
-           finally (return (the fixnum (- di d-start))))))
+(define-character-encoding :utf-32le
+   "A 32-bit, fixed-length encoding in which all Unicode
+characters can be encoded in a single 32-bit word. Input data is assumed
+to be in little-endian order.  Output is also written in little-endian byte
+order without a leading byte-order mark."
+  :max-units-per-char 1
+  :code-unit-size 32
+  :aliases '(:utf-32/le :ucs-4le :ucs-4/le)
+  :native-endianness #+little-endian t #+big-endian nil
+  :literal-char-code-limit #x110000
+  :nul-encoding #(0 0 0 0))
 
-(define-decoder :utf-32 (getter src-type setter dest-type)
-  `(named-lambda utf-32-decoder (src start end dest d-start)
-     (declare (type ,src-type src)
-              (type ,dest-type dest)
-              (fixnum start end d-start))
-     (let ((reverse #+big-endian nil #+little-endian t))
-       (when (not (zerop (- end start)))
-         (case (,getter src 0 4)
-           (#.+byte-order-mark-code+
-              (incf start 4)
-              #+little-endian (setq reverse nil))
-           (#.+swapped-byte-order-mark-code-32+
-              (incf start 4)
-              #+big-endian (setq reverse t))))
-       (loop for i fixnum from start below end by 4
-             for di from d-start
-             do (,setter (let ((unit (if reverse
-                                         (,getter src i 4 :re)
-                                         (,getter src i 4))))
-                           (if (>= unit #x110000)
-                               (decoding-error (vector (,getter src i)
-                                                       (,getter src (+ i 1))
-                                                       (,getter src (+ i 2))
-                                                       (,getter src (+ i 3)))
-                                               :utf-32 src i +repl+
-                                               'character-out-of-range)
-                               unit))
-                         dest di)
-             finally (return (the fixnum (- di d-start)))))))
+(define-ucs :utf-32le 4 :le)
+
+(define-character-encoding :utf-32be
+   "A 32-bit, fixed-length encoding in which all Unicode
+characters can be encoded in a single 32-bit word. Input data is assumed
+to be in big-endian order.  Output is also written in big-endian byte
+order without a leading byte-order mark."
+  :max-units-per-char 1
+  :code-unit-size 32
+  :aliases '(:utf-32/be :ucs-4be :ucs-4/be)
+  :native-endianness #+little-endian nil #+big-endian t
+  :literal-char-code-limit #x110000
+  :nul-encoding #(0 0 0 0))
+
+(define-ucs :utf-32be 4 :be)
+
+;; UCS-2
+
+(define-character-encoding :ucs-2
+   "A 16-bit, fixed-length encoding in which all Unicode
+characters can be encoded in a single 16-bit word.  The
+endianness of the encoded data is indicated by the endianness of
+a byte-order-mark character (#\u+feff) prepended to the data; in
+the absence of such a character on input, input data is assumed
+to be in big-endian order.  Output is written in native byte
+order with a leading byte-order mark."
+  :aliases '(:ucs-2)
+  :max-units-per-char 1
+  :code-unit-size 16
+  :native-endianness t ; not necessarily true when decoding
+  :literal-char-code-limit #x10000
+  :use-bom #+little-endian :ucs-2le #+big-endian :ucs-2be
+  :bom-encoding
+  #+big-endian #(#xfe #xff)
+  #+little-endian #(#xff #xfe)
+  :nul-encoding #(0 0)
+  :ambiguous #+little-endian t #+big-endian nil)
+
+(define-ucs :ucs-2 2 nil #x10000)
+
+(define-character-encoding :ucs-2le
+   "A 16-bit, fixed-length encoding in which all Unicode
+characters can be encoded in a single 16-bit word. Input data is assumed
+to be in little-endian order.  Output is also written in little-endian byte
+order without a leading byte-order mark."
+  :max-units-per-char 1
+  :code-unit-size 16
+  :aliases '(:ucs-2/le)
+  :native-endianness #+little-endian t #+big-endian nil
+  :literal-char-code-limit #x10000
+  :nul-encoding #(0 0))
+
+(define-ucs :ucs-2le 2 :le #x10000)
+
+(define-character-encoding :ucs-2be
+   "A 16-bit, fixed-length encoding in which all Unicode
+characters can be encoded in a single 16-bit word. Input data is assumed
+to be in big-endian order.  Output is also written in big-endian byte
+order without a leading byte-order mark."
+  :max-units-per-char 1
+  :code-unit-size 16
+  :aliases '(:ucs-2/be)
+  :native-endianness #+little-endian nil #+big-endian t
+  :literal-char-code-limit #x10000
+  :nul-encoding #(0 0))
+
+(define-ucs :ucs-2be 2 :be #x10000)
