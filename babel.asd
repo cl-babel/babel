@@ -41,6 +41,7 @@
      (:file "enc-iso-8859")
      (:file "enc-unicode")
      (:file "enc-cp1251")
+     (:file "enc-cp1252")
      (:file "jpn-table")
      (:file "enc-jpn")
      (:file "external-format")
