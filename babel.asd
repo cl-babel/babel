@@ -44,6 +44,8 @@
      (:file "enc-cp1252")
      (:file "jpn-table")
      (:file "enc-jpn")
+     (:file "gbk-map")
+     (:file "enc-gbk")
      (:file "external-format")
      (:file "strings")
      (:file "sharp-backslash")))))
