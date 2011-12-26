@@ -49,22 +49,22 @@
 (define-octet-counter :gbk (getter type)
   `(lambda (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
-     (let ((ncotets 0))
+     (let ((noctets 0))
        (loop
           for i from start below end
           for u1 of-type code-point = (,getter seq i)
           do
             (progn
-              (cond ((< u1 #x80) (incf ncotets))
-                    (t (incf ncotets 2)))
-              (when (and (plusp max) (= ncotets max))
-                (return (values ncotets i))))
-            finally (return (values ncotets i))))))
+              (cond ((< u1 #x80) (incf noctets))
+                    (t (incf noctets 2)))
+              (when (and (plusp max) (= noctets max))
+                (return (values noctets i))))
+            finally (return (values noctets i))))))
 
 (define-code-point-counter :gbk (getter type)
   `(lambda (seq start end max)
      (declare (type ,type seq))
-     (let (u1 (ncotets 0))
+     (let (u1 (noctets 0))
      (loop with i = start
         while (< i end) do
           (progn
@@ -72,10 +72,10 @@
             (cond
               ((eq 0 (logand u1 #x80)) (incf i))
               (t (incf i 2)))
-            (incf ncotets)
-            (when (and (plusp max) (= ncotets max))
-              (return (values ncotets i))))
-        finally (return (values ncotets i))))))
+            (incf noctets)
+            (when (and (plusp max) (= noctets max))
+              (return (values noctets i))))
+        finally (return (values noctets i))))))
 
 (define-encoder :gbk (getter src-type setter dest-type)
   `(lambda (src start end dest d-start)
@@ -113,7 +113,7 @@
                         (if (>= u2 #x7F) (incf u2))))
                      (values u1 u2))))
        
-       (let ((c 0) index (ncotets 0))
+       (let ((c 0) index (noctets 0))
          (loop
             for i from start below end
             for code of-type code-point = (,getter src i)
@@ -124,8 +124,8 @@
                 (setf c (code-char code))
                 (cond
                   ((< code #x80); ascii
-                   (,setter code dest ncotets)
-                   (incf ncotets))
+                   (,setter code dest noctets)
+                   (incf noctets))
                   (t ; gbk
                    (setf index
                          (position c *gbk-unicode-mapping*))
@@ -133,16 +133,16 @@
                    (if (not index)
                        (handle-error invalid-gbk-character))
                    (multiple-value-bind (uh ul) (do-encoding index)
-                                     (,setter uh dest ncotets)
-                                     (,setter ul dest (+ 1 ncotets))
-                                     (incf ncotets 2)))))
-            finally (return (the fixnum (- ncotets d-start))))))))
+                                     (,setter uh dest noctets)
+                                     (,setter ul dest (+ 1 noctets))
+                                     (incf noctets 2)))))
+            finally (return (the fixnum (- noctets d-start))))))))
 
 (define-decoder :gbk (getter src-type setter dest-type)
   `(lambda (src start end dest d-start)
      (declare (type ,src-type src)
               (type ,dest-type dest))
-     (let ((u1 0) (u2 0) (index 0) (tmp 0) (ncotets 0))
+     (let ((u1 0) (u2 0) (index 0) (tmp 0) (noctets 0))
        (loop with i = start
           while (< i end) do
             (macrolet
@@ -152,7 +152,7 @@
               (incf i)
               (cond
                 ((eq 0 (logand u1 #x80))
-                 (,setter u1 dest ncotets))
+                 (,setter u1 dest noctets))
                 (t
                  (setf u2 (,getter src i))
                  (incf i)
@@ -187,6 +187,6 @@
                  
                  (,setter (char-code
                            (elt *gbk-unicode-mapping* index))
-                          dest ncotets)))
-                (incf ncotets))
-          finally (return (the fixnum (- ncotets d-start)))))))
+                          dest noctets)))
+                (incf noctets))
+          finally (return (the fixnum (- noctets d-start)))))))
