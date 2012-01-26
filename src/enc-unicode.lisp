@@ -520,9 +520,9 @@ code points for each invalid byte."
   (check-type name keyword)
   (let ((swap-var (gensym "SWAP"))
         (code-point-counter-name
-          (intern (format nil "~a-CODE-POINT-COUNTER" name)))
-        (encoder-name (intern (format nil "~a-ENCODER" name)))
-        (decoder-name (intern (format nil "~a-DECODER" name))))
+          (format-symbol t '#:~a-code-point-counter (string name)))
+        (encoder-name (format-symbol t '#:~a-encoder (string name)))
+        (decoder-name (format-symbol t '#:~a-decoder (string name))))
     (labels ((make-bom-check-form (end start getter seq)
                (if (null endianness)
                  ``((,',swap-var
@@ -536,14 +536,14 @@ code points for each invalid byte."
                (case endianness
                  (:le ``(,,getter ,,src ,,i 2 :le))
                  (:be ``(,,getter ,,src ,,i 2 :be))
-                 (T ``(if ,',swap-var
+                 (t ``(if ,',swap-var
                         (,,getter ,,src ,,i 2 :re)
                         (,,getter ,,src ,,i 2 :ne)))))
              (make-setter-form (setter code dest di)
                (case endianness
                  (:be ``(,,setter ,,code ,,dest ,,di 2 :be))
                  (:le ``(,,setter ,,code ,,dest ,,di 2 :le))
-                 (T ``(,,setter ,,code ,,dest ,,di 2 :ne)))))
+                 (t ``(,,setter ,,code ,,dest ,,di 2 :ne)))))
       `(progn
          (define-octet-counter ,name (getter type)
            `(utf16-octet-counter ,getter ,type))
@@ -691,11 +691,11 @@ written in big-endian byte-order without a leading byte-order mark."
   (check-type endianness (or null (eql :le) (eql :be)))
   (let ((swap-var (gensym "SWAP"))
         (code-point-counter-name
-          (intern (format nil "~a-CODE-POINT-COUNTER" name)))
+          (format-symbol t '#:~a-code-point-counter (string name)))
         (encoder-name
-          (intern (format nil "~a-ENCODER" name)))
+          (format-symbol t '#:~a-encoder (string name)))
         (decoder-name
-          (intern (format nil "~a-DECODER" name))))
+          (format-symbol t '#:~a-decoder (string name))))
     (labels ((make-bom-check-form (end start getter src)
                (if (null endianness)
                  ``(when (not (zerop (- ,,end ,,start)))
@@ -703,8 +703,8 @@ written in big-endian byte-order without a leading byte-order mark."
                        (#.+byte-order-mark-code+
                          (incf ,,start ,',bytes) nil)
                        (#.+swapped-byte-order-mark-code-32+
-                        (incf ,,start ,',bytes) T)
-                       (T #+little-endian T)))
+                        (incf ,,start ,',bytes) t)
+                       (t #+little-endian t)))
                  '()))
              (make-setter-form (setter code dest di)
                ``(,,setter ,,code ,,dest ,,di ,',bytes
