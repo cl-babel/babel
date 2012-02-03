@@ -27,7 +27,7 @@
 (in-package #:babel-encodings)
 
 (defparameter *gbk-unicode-mapping*
-  (map 'string
+  (map 'babel:unicode-string
        #'code-char
        '(#x554A #x963F #x57C3 #x6328 #x54CE #x5509 #x54C0 #x7691 #x764C #x853C
          #x77EE #x827E #x788D #x7231 #x9698 #x978D #x6C28 #x5B89 #x4FFA #x6309

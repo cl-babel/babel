@@ -26,6 +26,9 @@
 
 (in-package #:babel-encodings)
 
+;; populated in gbk-map.lisp
+(defvar *gbk-unicode-mapping*)
+
 (defconstant +gbk2-offset+ 0)
 (defconstant +gbk3-offset+ 6763)
 (defconstant +gbk4-offset+ (+ 6763 6080))

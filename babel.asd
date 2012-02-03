@@ -44,10 +44,10 @@
      (:file "enc-cp1252")
      (:file "jpn-table")
      (:file "enc-jpn")
-     (:file "gbk-map")
      (:file "enc-gbk")
      (:file "external-format")
      (:file "strings")
+     (:file "gbk-map")
      (:file "sharp-backslash")))))
 
 (defmethod perform ((o test-op) (c (eql (find-system :babel))))
