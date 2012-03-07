@@ -217,9 +217,11 @@ in 2 to 4 bytes."
                           ((and (= u1 #xe0) (< u2 #xa0))
                            (handle-error 3 overlong-utf8-sequence))
                           ((< u1 #xf0)  ; 3 octets
-                           (logior (f-ash (f-logand u1 #x0f) 12)
-                                   (f-logior (f-ash (f-logand u2 #x3f) 6)
-                                             (f-logand u3 #x3f))))
+                           (let ((start (f-logior (f-ash (f-logand u1 #x0f) 12)
+                                                  (f-ash (f-logand u2 #x3f) 6))))
+                             (if (<= #xd800 start #xdfc0)
+                                 (handle-error 3 character-out-of-range)
+                                 (logior start (f-logand u3 #x3f)))))
                           (t            ; 4 octets
                            (setq u4 (consume-octet))
                            (handle-error-if-icb u4 3)
