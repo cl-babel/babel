@@ -219,7 +219,7 @@ in 2 to 4 bytes."
                           ((< u1 #xf0)  ; 3 octets
                            (let ((start (f-logior (f-ash (f-logand u1 #x0f) 12)
                                                   (f-ash (f-logand u2 #x3f) 6))))
-                             (if (<= #xD800 start #xDFFF)
+                             (if (<= #xD800 start #xDFC0)
                                  (handle-error 3 character-out-of-range)
                                  (logior start (f-logand u3 #x3f)))))
                           (t            ; 4 octets
