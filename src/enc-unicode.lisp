@@ -66,6 +66,10 @@ in 2 to 4 bytes."
   ()
   (:documentation "Signalled upon overlong UTF-8 sequences."))
 
+(define-condition invalid-codepoint (character-decoding-error)
+  ()
+  (:documentation "Signalled when an invalid codepoint is decoded from what appears to be a valid encoding."))
+
 (define-octet-counter :utf-8 (getter type)
   `(named-lambda utf-8-octet-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
@@ -217,9 +221,11 @@ in 2 to 4 bytes."
                           ((and (= u1 #xe0) (< u2 #xa0))
                            (handle-error 3 overlong-utf8-sequence))
                           ((< u1 #xf0)  ; 3 octets
-                           (logior (f-ash (f-logand u1 #x0f) 12)
-                                   (f-logior (f-ash (f-logand u2 #x3f) 6)
-                                             (f-logand u3 #x3f))))
+                           (let ((start (f-logior (f-ash (f-logand u1 #x0f) 12)
+                                                  (f-ash (f-logand u2 #x3f) 6))))
+                             (if (and (> start #xD800) (< start #xDFFF))
+                                 (handle-error 3 invalid-codepoint)
+                                 (logior start (f-logand u3 #x3f)))))
                           (t            ; 4 octets
                            (setq u4 (consume-octet))
                            (handle-error-if-icb u4 3)
