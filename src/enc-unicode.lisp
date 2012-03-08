@@ -368,7 +368,8 @@ code points for each invalid byte."
                                 (and (= noctets 3)
                                      (not (and (< (f-logxor u2 #x80) #x40)
                                                (< (f-logxor u3 #x80) #x40)
-                                               (or (>= u1 #xe1) (>= u2 #xa0)))))
+                                               (or (>= u1 #xe1) (>= u2 #xa0))
+                                               (or (/= u1 #xed) (< u2 #xa0) (> u2 #xbf)))))
                                 (and (= noctets 4)
                                      (not
                                       (and (< (f-logxor u2 #x80) #x40)
@@ -469,10 +470,11 @@ code points for each invalid byte."
                                    (if (and (< (f-logxor u2 #x80) #x40)
                                             (< (f-logxor u3 #x80) #x40)
                                             (or (>= u1 #xe1) (>= u2 #xa0)))
-                                       (logior
-                                        (f-ash (f-logand u1 #x0f) 12)
-                                        (f-logior (f-ash (f-logand u2 #x3f) 6)
-                                                  (f-logand u3 #x3f)))
+                                       (let ((start (f-logior (f-ash (f-logand u1 #x0f) 12)
+                                                              (f-ash (f-logand u2 #x3f) 6))))
+                                         (if (<= #xd800 start #xdfc0)
+                                             (encode-raw-octets 3)
+                                             (logior start (f-logand u3 #x3f))))
                                        (encode-raw-octets 3)))
                                   (t    ; 4 octets
                                    (setq u4 (consume-octet 3))
