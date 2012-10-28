@@ -273,9 +273,10 @@
     (string-to-octets (coerce "abc" 'base-string) :encoding :ascii)
   #(97 98 99))
 
-;;; For now, disable this tests for CCL. In the future, simply mark
-;;; them as expected failures.
-#-ccl
+;;; For now, disable this tests for Lisps that are strict about
+;;; non-character code points. In the future, simply mark them as
+;;; expected failures.
+#-(or abcl ccl)
 (progn
   (defstest utf-8b.1
       (string-to-octets (coerce #(#\a #\b #\udcf0) 'unicode-string)
@@ -353,9 +354,10 @@
                                    :encoding :latin9)
                  l9c))))
 
-;; Expected to fail on CCL. Mark this as an expected failure
-;; when Stefil supports such a feature.
-#-ccl
+;; Expected to fail on Lisps that are strict about non-character code
+;; points. Mark this as an expected failure when Stefil supports such
+;; a feature.
+#-(or abcl ccl)
 (deftest code-char-nilness ()
   (is (loop for i below unicode-char-code-limit
             never (null (code-char i)))))
