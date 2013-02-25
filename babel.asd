@@ -27,7 +27,6 @@
 (defsystem babel
   :description "Babel, a charset conversion library."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
-  :version "0.3.0"
   :licence "MIT"
   :depends-on (trivial-features alexandria)
   :components
@@ -56,5 +55,3 @@
 
 (defmethod operation-done-p ((o test-op) (c (eql (find-system :babel))))
   nil)
-
-;;; vim: ft=lisp et
