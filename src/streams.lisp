@@ -349,6 +349,10 @@ contains the octes that were actually output."
      (extend-vector-output-stream-buffer sequence stream :start start :end end)))
   sequence)
 
+(defmethod stream-write-string ((stream vector-output-stream)
+                                string &optional (start 0) (end (length string)))
+  (stream-write-sequence stream string start (or end (length string))))
+
 (defmethod stream-line-column ((stream vector-output-stream))
   "Dummy line-column method that always returns NIL. Needed for
 character output streams."
