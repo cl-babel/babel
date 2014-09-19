@@ -37,6 +37,7 @@
      (:file "encodings")
      (:file "enc-ascii")
      (:file "enc-ebcdic")
+     (:file "enc-ebcdic-int")
      (:file "enc-iso-8859")
      (:file "enc-unicode")
      (:file "enc-cp1251")
