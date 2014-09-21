@@ -44,6 +44,7 @@
      (:file "jpn-table")
      (:file "enc-jpn")
      (:file "enc-gbk")
+     (:file "enc-koi8")
      (:file "external-format")
      (:file "strings")
      (:file "gbk-map")
