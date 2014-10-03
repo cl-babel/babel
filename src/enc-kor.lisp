@@ -26,26 +26,18 @@
     :max-units-per-char 2
     :literal-char-code-limit #x80)
 
-
 (define-octet-counter :cp949 (getter type)
   `(named-lambda cp949-octet-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
      (loop with noctets fixnum = 0
         for i fixnum from start below end
         for code of-type code-point = (,getter seq i)
-        do
-          (let ((new (cond ((not (null (ucs->cp949 code))) 2)
-                           (t 1))))                
-            (if (and (plusp max) (> new max))
-                (loop-finish)
-                (setq noctets new)))
+        do (let ((new (let ((cp949 (ucs->cp949 code)))
+                        (if (null cp949) 1 2))))            
+             (incf noctets new)
+             (when (and (plusp max) (> new max)) (loop-finish)))
         finally (return (values noctets i)))))
-     
-
-; for code of-type code-point = (,getter seq i)
-;           for i fixnum from start below end
-;           finally (return (values noctets i)))))
-
+ 
 (define-code-point-counter :cp949 (getter type)
   `(named-lambda cp949-code-point-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
@@ -56,7 +48,24 @@
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
-     (error :NIY-cp949-encoder)))
+     (loop with di fixnum = d-start
+        for i fixnum from start below end
+        for code of-type code-point = (,getter src i)
+        for cp949 = (ucs->cp949 code) do
+          (macrolet ((set-octet (offset value)
+                       `(,',setter ,value dest (the fixnum (+ di ,offset)))))
+            (if (>= code #x80)
+                ;; 1-byte.
+                (progn
+                  (set-octet 0 code)
+                  (incf di))
+                ;; 2-bytes.
+                (progn
+                  (set-octet 0 (f-logand #xff (f-ash cp949 -8)))
+                  (set-octet 1 (logand cp949 #xff))                       
+                  (incf di 2))))
+        finally (return (the fixnum (- di d-start))))))
+
 
 (define-decoder :cp949 (getter src-type setter dest-type)
   `(named-lambda cp949-decoder (src start end dest d-start)
