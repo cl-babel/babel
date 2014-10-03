@@ -93,7 +93,40 @@
      (declare (type ,src-type src)
               (type ,dest-type dest)
               (fixnum start end d-start))
-     (error :NIY-cp949-decoder)))
+     (let ((u2 0))
+       (declare (type ub8 u2))
+       (loop for di fixnum from d-start
+             for i fixnum from start below end
+             for u1 of-type ub8 = (,getter src i) do
+               (macrolet
+                   ((consume-octet ()
+                      `(let ((next-i (incf i)))
+                         (if (= next-i end)
+                             (return-from setter-block
+                               (decoding-error nil :cp949 src i +repl+
+                                               'end-of-input-in-character))
+                             (,',getter src next-i))))
+                    (handle-error (n &optional (c 'character-decoding-error))
+                      `(decoding-error
+                        (vector ,@(subseq '(u1 u2) 0 n))
+                        :cp949 src (1+ (- i ,n)) +repl+ ',c))
+                    (handle-error-if-icb (var n)
+                      `(when (not (< #x7f ,var #xc0))
+                         (decf i)
+                         (return-from setter-block
+                           (handle-error ,n invalid-utf8-continuation-byte)))))
+                 (,setter
+                  (block setter-block
+                    (cond
+                      ;; 2 octets
+                      ((or (= u1 #x8e)
+                           (< #xa0 u1 #xff))
+                       (cp949->ucs (logior (f-ash u1 8)
+                                           (consume-octet))))
+                      ;; 1 octet
+                      (t u1)))
+                  dest di))
+         finally (return (the fixnum (- di d-start)))))))
 
 
 ;;;EOF.
