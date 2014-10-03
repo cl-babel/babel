@@ -27,6 +27,10 @@
      (declare (type ,type seq) (fixnum start end max))
      (error :NIY-cp949-octet-counter)))
 
+; for code of-type code-point = (,getter seq i)
+;           for i fixnum from start below end
+;           finally (return (values noctets i)))))
+
 (define-code-point-counter :cp949 (getter type)
   `(named-lambda cp949-code-point-counter (seq start end max)
      (declare (type ,type seq) (fixnum start end max))
