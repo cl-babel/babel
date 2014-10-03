@@ -16,7 +16,35 @@
     (setf (gethash ucs *ucs-to-cp949-hash*) cp949)))
 
 
+(define-character-encoding :cp949
+    "UHC, (CP949, or extended EUC-KR), 1 -or- 2-bytes widely used in Korean."
+    :max-units-per-char 2
+    :literal-char-code-limit #x80)
 
+
+(define-octet-counter :cp949 (getter type)
+  `(named-lambda cp949-octet-counter (seq start end max)
+     (declare (type ,type seq) (fixnum start end max))
+     (error :NIY-cp949-octet-counter)))
+
+(define-code-point-counter :cp949 (getter type)
+  `(named-lambda cp949-code-point-counter (seq start end max)
+     (declare (type ,type seq) (fixnum start end max))
+     (error :NIY-cp949-code-point-counter)))
+
+(define-encoder :cp949 (getter src-type setter dest-type)
+  `(named-lambda cp949-encoder (src start end dest d-start)
+     (declare (type ,src-type src)
+              (type ,dest-type dest)
+              (fixnum start end d-start))
+     (error :NIY-cp949-encoder)))
+
+(define-decoder :cp949 (getter src-type setter dest-type)
+  `(named-lambda cp949-decoder (src start end dest d-start)
+     (declare (type ,src-type src)
+              (type ,dest-type dest)
+              (fixnum start end d-start))
+     (error :NIY-cp949-decoder)))
 
 
 ;;;EOF.
