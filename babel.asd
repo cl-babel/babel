@@ -44,6 +44,8 @@
      (:file "enc-cp1252")
      (:file "jpn-table")
      (:file "enc-jpn")
+     (:file "kor-table")
+     (:file "enc-kor")
      (:file "enc-gbk")
      (:file "enc-koi8")
      (:file "external-format")
