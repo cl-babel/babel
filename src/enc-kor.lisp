@@ -40,8 +40,25 @@
  
 (define-code-point-counter :cp949 (getter type)
   `(named-lambda cp949-code-point-counter (seq start end max)
-     (declare (type ,type seq) (fixnum start end max))
-     (error :NIY-cp949-code-point-counter)))
+                 (declare (type ,type seq) (fixnum start end max))
+                 (loop with nchars fixnum = 0
+                    with i fixnum = start
+                    while (< i end) do
+                      (let* ((octet (,getter seq i))
+                             (next-i (+ i (if (>= octet #x80) 2 1))))
+                        (declare (type ub8 octet) (fixnum next-i))
+                        (cond ((> next-i end)
+                               (decoding-error (vector octet) :cp949 seq i nil 'end-of-input-in-character)
+                               (return (values (1+ nchars) end)))
+                              (t
+                               (setq nchars (1+ nchars)
+                                     i next-i)
+                               (when (and (plusp max) (= nchars max))
+                                 (return (values nchars i))))))
+                    finally (progn (assert (= i end))
+                                   ;;(format t "code-point-counter n-chars=~a / i=~a.~%" nchars i)
+                                   (return (values nchars i))))))
+
 
 (define-encoder :cp949 (getter src-type setter dest-type)
   `(named-lambda cp949-encoder (src start end dest d-start)
