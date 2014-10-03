@@ -54,16 +54,20 @@
         for cp949 = (ucs->cp949 code) do
           (macrolet ((set-octet (offset value)
                        `(,',setter ,value dest (the fixnum (+ di ,offset)))))
-            (if (>= code #x80)
+            (if (<= code #x80)
                 ;; 1-byte.
                 (progn
                   (set-octet 0 code)
                   (incf di))
                 ;; 2-bytes.
-                (progn
-                  (set-octet 0 (f-logand #xff (f-ash cp949 -8)))
-                  (set-octet 1 (logand cp949 #xff))                       
-                  (incf di 2))))
+                (if (null cp949)
+                    ;; unknown-code.
+                    (error "skip?" :no-mapping-for-cp949)
+                    ;; ok.
+                    (progn
+                      (set-octet 0 (f-logand #xff (f-ash cp949 -8)))
+                      (set-octet 1 (logand cp949 #xff))                       
+                      (incf di 2)))))
         finally (return (the fixnum (- di d-start))))))
 
 
