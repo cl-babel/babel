@@ -5,21 +5,25 @@
 
 (in-package #:babel-encodings)
 
-(defvar +cp949-ascii-max+ #x7f)
 
-(defvar *cp949-to-ucs-hash* (make-hash-table))
-(defvar *ucs-to-cp949-hash* (make-hash-table))
+;;; CP949 tables.
+
+(defvar *cp949->ucs-hash* (make-hash-table))
+(defvar *ucs->cp949-hash* (make-hash-table))
 (dolist (p +cp949->unicode+)
   (let ((cp949 (car p))
         (ucs (cadr p)))
-    (setf (gethash cp949 *cp949-to-ucs-hash*) ucs)
-    (setf (gethash ucs *ucs-to-cp949-hash*) cp949)))
+    (setf (gethash cp949 *cp949->ucs-hash*) ucs)
+    (setf (gethash ucs *ucs->cp949-hash*) cp949)))
 
 (defun ucs->cp949 (code)
-  (values (gethash code *ucs-to-cp949-hash*)))
+  (values (gethash code *ucs->cp949-hash*)))
 
 (defun cp949->ucs (code)
-  (values (gethash code *cp949-to-ucs-hash*)))
+  (values (gethash code *cp949->ucs-hash*)))
+
+
+
 
 (define-character-encoding :cp949
     "UHC, (CP949, or extended EUC-KR), 1 -or- 2-bytes widely used in Korean."
