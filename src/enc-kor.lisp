@@ -6,22 +6,38 @@
 (in-package #:babel-encodings)
 
 
+;;; code-table macros.
+
+(defmacro X->UCS (code-table x->ucs-table ucs->x-table 
+                  x->ucs-func-name ucs->x-func-name)
+  `(progn 
+     ;; table mappings.
+     (dolist (p ,code-table)
+       (let ((X (car p))
+             (U (cadr p)))
+         (setf (gethash X ,x->ucs-table) U)
+         (setf (gethash U ,ucs->x-table) X)))
+     ;; helper functions.
+     (defun ,ucs->x-func-name (code)
+       (values (gethash code ,ucs->x-table)))
+     (defun ,x->ucs-func-name (code)
+       (values (gethash code ,x->ucs-table)))))
+
+
 ;;; CP949 tables.
 
 (defvar *cp949->ucs-hash* (make-hash-table))
 (defvar *ucs->cp949-hash* (make-hash-table))
-(dolist (p +cp949->unicode+)
-  (let ((cp949 (car p))
-        (ucs (cadr p)))
-    (setf (gethash cp949 *cp949->ucs-hash*) ucs)
-    (setf (gethash ucs *ucs->cp949-hash*) cp949)))
+(X->UCS +cp949->unicode+ *cp949->ucs-hash* *ucs->cp949-hash*
+        ucs->cp949 cp949->ucs)
 
-(defun ucs->cp949 (code)
-  (values (gethash code *ucs->cp949-hash*)))
 
-(defun cp949->ucs (code)
-  (values (gethash code *cp949->ucs-hash*)))
+;;; JOHAB tables.
 
+(defvar *johab->ucs-hash* (make-hash-table))
+(defvar *ucs->johab-hash* (make-hash-table))
+(X->UCS +johab->unicode+ *johab->ucs-hash* *ucs->johab-hash*
+        ucs->johab johab->ucs)
 
 
 
