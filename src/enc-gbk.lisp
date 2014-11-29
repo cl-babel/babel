@@ -45,7 +45,7 @@ Chinese characters, used in the People's Republic of China."
   ()
   (:documentation "Signalled when an invalid GBK byte is found."))
 
-(define-condition invalid-gbk-character (character-decoding-error)
+(define-condition invalid-gbk-character (character-encoding-error)
   ()
   (:documentation "Signalled when an invalid GBK character is found."))
 
