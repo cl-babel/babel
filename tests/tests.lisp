@@ -27,6 +27,7 @@
 (in-package #:cl-user)
 (defpackage #:babel-tests
   (:use #:common-lisp #:babel #:babel-encodings #:hu.dwim.stefil)
+  (:import-from #:alexandria #:ignore-some-conditions)
   (:export #:run))
 (in-package #:babel-tests)
 
@@ -833,3 +834,28 @@
   (mapcar 'encoder/decoder-retvals
           (remove-if 'ambiguous-encoding-p
                      (list-character-encodings))))
+
+(deftest code-point-sweep (encoding)
+  (finishes
+    (dotimes (i char-code-limit)
+      (let ((char (ignore-errors (code-char i))))
+        (when char
+          (ignore-some-conditions (character-encoding-error)
+            (string-to-octets (string char) :encoding encoding)))))))
+
+#+enable-slow-babel-tests
+(deftest code-point-sweep-all-encodings ()
+  (mapc #'code-point-sweep (list-character-encodings)))
+
+(deftest octet-sweep (encoding)
+  (finishes
+    (loop for b1 upto #xff do
+      (loop for b2 upto #xff do
+        (loop for b3 upto #xff do
+          (loop for b4 upto #xff do
+            (ignore-some-conditions (character-decoding-error)
+              (octets-to-string (ub8v b1 b2 b3 b4) :encoding encoding))))))))
+
+#+enable-slow-babel-tests
+(deftest octet-sweep-all-encodings ()
+  (mapc #'octet-sweep (list-character-encodings)))
