@@ -53,7 +53,7 @@
      (returns ,form ,@(mapcar (lambda (x) `',x) return-values))))
 
 (defun fail (control-string &rest arguments)
-  (hu.dwim.stefil::record-failure 'hu.dwim.stefil::failed-assertion
+  (hu.dwim.stefil::record/failure 'hu.dwim.stefil::failed-assertion
                                   :format-control control-string
                                   :format-arguments arguments))
 
