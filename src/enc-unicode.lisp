@@ -746,7 +746,7 @@ written in big-endian byte-order without a leading byte-order mark."
                        (type ,dest-type dest)
                        (fixnum start end d-start))
               (loop for i fixnum from start below end
-                for di fixnum from d-start by ,',bytes
+                and di fixnum from d-start by ,',bytes
                 for code of-type code-point = (,getter src i) do
                 (if (>= code ,',limit)
                   (encoding-error code ,',name src i +repl+)
@@ -760,7 +760,7 @@ written in big-endian byte-order without a leading byte-order mark."
               (let ((,',swap-var ,,(make-bom-check-form ''end ''start 'getter ''src)))
                 (declare (ignorable ,',swap-var))
                 (loop for i fixnum from start below end by ,',bytes
-                  for di from d-start
+                  and di from d-start
                   do (,setter (let ((unit ,,(make-getter-form 'getter ''src ''i)))
                                 (if (>= unit ,',limit)
                                   (decoding-error
