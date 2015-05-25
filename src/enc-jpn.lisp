@@ -43,8 +43,9 @@
                   (+ (ash mid 8) low))))))
   (dolist (i *eucjp*)
     (let ((cp932 (euc-cp932 (first i))))
-      (setf (gethash cp932 *cp932-to-ucs-hash*) (second i))
-      (setf (gethash (second i) *ucs-to-cp932-hash*) cp932))))
+      (when cp932
+        (setf (gethash cp932 *cp932-to-ucs-hash*) (second i))
+        (setf (gethash (second i) *ucs-to-cp932-hash*) cp932)))))
 
 ;ascii
 (loop for i from #x00 to #x7f do
