@@ -111,6 +111,8 @@ NAME.  Signals an error if one is not found.  If NAME is already
 a CHARACTER-ENCONDING object, it is returned unmodified."
   (when (typep name 'character-encoding)
     (return-from get-character-encoding name))
+  (when (typep name 'string)
+    (setq name (make-keyword (string-upcase name))))
   (when (eq name :default)
     (setq name *default-character-encoding*))
   (or (gethash name *character-encodings*)
