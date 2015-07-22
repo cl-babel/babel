@@ -92,6 +92,20 @@ character encoding object."
     (format s "~&~A~%~%" documentation))
   (call-next-method))
 
+;;Read alias table from csv-file.
+(defun read-aliases-csv (csv-path)
+  (let ((alias-hash-table
+         (make-hash-table :test 'equalp)))
+    (loop
+       for row in (cdr (cl-csv:read-csv csv-path))
+       for encoding-name = (nth 1 row)
+       for aliases = (split-sequence:split-sequence #\Newline (nth 5 row))
+       do
+         (let ((whole-names (cons encoding-name aliases)))
+           (dolist (name whole-names)
+             (setf (gethash name alias-hash-table) whole-names))))
+    alias-hash-table))
+
 (defvar *supported-character-encodings* nil)
 
 (defun list-character-encodings ()
@@ -99,7 +113,7 @@ character encoding object."
 encodings.  This list does not include aliases."
   *supported-character-encodings*)
 
-(defvar *character-encodings* (make-hash-table :test 'eq))
+(defvar *character-encodings* (make-hash-table :test 'equalp))
 
 (defvar *default-character-encoding* :utf-8
   "Special variable used to determine the default character
@@ -111,10 +125,10 @@ NAME.  Signals an error if one is not found.  If NAME is already
 a CHARACTER-ENCONDING object, it is returned unmodified."
   (when (typep name 'character-encoding)
     (return-from get-character-encoding name))
-  (when (typep name 'string)
-    (setq name (make-keyword (string-upcase name))))
   (when (eq name :default)
     (setq name *default-character-encoding*))
+  (when (typep name 'keyword)
+    (setq name (symbol-name name)))
   (or (gethash name *character-encodings*)
       (error "Unknown character encoding: ~S" name)))
 
@@ -123,9 +137,10 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 
 (defun notice-character-encoding (enc)
   (pushnew (enc-name enc) *supported-character-encodings*)
-  (dolist (kw (cons (enc-name enc) (enc-aliases enc)))
-    (setf (gethash kw *character-encodings*) enc))
-  (enc-name enc))
+  (let ((encoding-aliases (read-aliases-csv #P"character-sets-1.csv")))
+    (dolist (kw (gethash (symbol-name (enc-name enc)) encoding-aliases))
+      (setf (gethash kw *character-encodings*) enc))
+    (enc-name enc)))
 
 (defmacro define-character-encoding (name docstring &body options)
   `(notice-character-encoding
