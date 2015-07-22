@@ -138,7 +138,10 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 (defun notice-character-encoding (enc)
   (pushnew (enc-name enc) *supported-character-encodings*)
   (let ((encoding-aliases (read-aliases-csv #P"character-sets-1.csv")))
-    (dolist (kw (gethash (symbol-name (enc-name enc)) encoding-aliases))
+    (dolist (kw (cons (symbol-name (enc-name enc))
+                      (append
+                       (mapcar #'symbol-name (enc-aliases enc))
+                       (gethash (symbol-name (enc-name enc)) encoding-aliases))))
       (setf (gethash kw *character-encodings*) enc))
     (enc-name enc)))
 
