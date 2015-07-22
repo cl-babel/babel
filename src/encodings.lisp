@@ -137,7 +137,10 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 
 (defun notice-character-encoding (enc)
   (pushnew (enc-name enc) *supported-character-encodings*)
-  (let ((encoding-aliases (read-aliases-csv #P"character-sets-1.csv")))
+  (let ((encoding-aliases (read-aliases-csv
+                           #.(asdf:system-relative-pathname
+                              :babel
+                              #p"src/character-sets-1.csv"))))
     (dolist (kw (cons (symbol-name (enc-name enc))
                       (append
                        (mapcar #'symbol-name (enc-aliases enc))
