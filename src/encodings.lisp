@@ -92,19 +92,14 @@ character encoding object."
     (format s "~&~A~%~%" documentation))
   (call-next-method))
 
-;;Read alias table from csv-file.
-(defun read-aliases-csv (csv-path)
-  (let ((alias-hash-table
-         (make-hash-table :test 'equalp)))
-    (loop
-       for row in (cdr (cl-csv:read-csv csv-path))
-       for encoding-name = (nth 1 row)
-       for aliases = (split-sequence:split-sequence #\Newline (nth 5 row))
-       do
-         (let ((whole-names (cons encoding-name aliases)))
-           (dolist (name whole-names)
-             (setf (gethash name alias-hash-table) whole-names))))
-    alias-hash-table))
+(defun lookup-alias-from-official-csv (csv-path name)
+  (loop
+     for row in (cdr (cl-csv:read-csv csv-path))
+     for encoding-name = (nth 1 row)
+     for aliases = (split-sequence:split-sequence #\Newline (nth 5 row))
+     for whole-names = (cons encoding-name aliases)
+     if (member name whole-names :test #'equalp)
+     return whole-names))
 
 (defvar *supported-character-encodings* nil)
 
@@ -137,14 +132,15 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 
 (defun notice-character-encoding (enc)
   (pushnew (enc-name enc) *supported-character-encodings*)
-  (let ((encoding-aliases (read-aliases-csv
+  (let ((official-aliases (lookup-alias-from-official-csv
                            #.(asdf:system-relative-pathname
                               :babel
-                              #p"src/character-sets-1.csv"))))
+                              #p"src/character-sets-1.csv")
+                           (symbol-name (enc-name enc)))))
     (dolist (kw (cons (symbol-name (enc-name enc))
                       (append
                        (mapcar #'symbol-name (enc-aliases enc))
-                       (gethash (symbol-name (enc-name enc)) encoding-aliases))))
+                       official-aliases)))
       (setf (gethash kw *character-encodings*) enc))
     (enc-name enc)))
 
