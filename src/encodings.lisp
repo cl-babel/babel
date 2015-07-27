@@ -93,13 +93,16 @@ character encoding object."
   (call-next-method))
 
 (defun lookup-alias-from-official-csv (csv-path name)
-  (loop
-     for row in (cdr (cl-csv:read-csv csv-path))
-     for encoding-name = (nth 1 row)
-     for aliases = (split-sequence:split-sequence #\Newline (nth 5 row))
-     for whole-names = (cons encoding-name aliases)
-     if (member name whole-names :test #'equalp)
-     return whole-names))
+  (with-open-file (csv-in csv-path :direction :input)
+    (fare-csv:read-csv-line csv-in) ; skip header line.
+    (loop
+       for row = (fare-csv:read-csv-line csv-in)
+       while row
+       for encoding-name = (nth 1 row)
+       for aliases = (split-sequence:split-sequence #\Newline (nth 5 row))
+       for whole-names = (cons encoding-name aliases)
+       if (member name whole-names :test #'equalp)
+       return whole-names)))
 
 (defvar *supported-character-encodings* nil)
 
