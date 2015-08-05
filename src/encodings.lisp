@@ -92,17 +92,12 @@ character encoding object."
     (format s "~&~A~%~%" documentation))
   (call-next-method))
 
-(defun lookup-alias-from-official-csv (csv-path name)
-  (with-open-file (csv-in csv-path :direction :input)
-    (fare-csv:read-csv-line csv-in) ; skip header line.
-    (loop
-       for row = (fare-csv:read-csv-line csv-in)
-       while row
-       for encoding-name = (nth 1 row)
-       for aliases = (split-sequence:split-sequence #\Newline (nth 5 row))
-       for whole-names = (cons encoding-name aliases)
-       if (member name whole-names :test #'equalp)
-       return whole-names)))
+(defun lookup-alias-from-official-csv (name)
+  (loop
+     for row in *official-encoding-aliases*
+     when (member name row :test #'equalp)
+     return row
+     finally (return nil)))
 
 (defvar *supported-character-encodings* nil)
 
@@ -136,9 +131,6 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 (defun notice-character-encoding (enc)
   (pushnew (enc-name enc) *supported-character-encodings*)
   (let ((official-aliases (lookup-alias-from-official-csv
-                           #.(asdf:system-relative-pathname
-                              :babel
-                              #p"src/character-sets-1.csv")
                            (symbol-name (enc-name enc)))))
     (dolist (kw (cons (symbol-name (enc-name enc))
                       (append

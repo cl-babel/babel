@@ -28,12 +28,13 @@
   :description "Babel, a charset conversion library."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
   :licence "MIT"
-  :depends-on (trivial-features alexandria fare-csv split-sequence)
+  :depends-on (trivial-features alexandria)
   :components
   ((:module src
     :serial t
     :components
     ((:file "packages")
+     (:file "official-encoding-aliases")
      (:file "encodings")
      (:file "enc-ascii")
      (:file "enc-ebcdic")
