@@ -4,7 +4,8 @@
 (in-package #:babel-encodings)
 
 (defvar *official-encoding-aliases*
-  '(("US-ASCII" "iso-ir-6" "ANSI_X3.4-1968" "ANSI_X3.4-1986" "ISO_646.irv:1991" "ISO646-US" "US-ASCII" "us" "IBM367" "cp367" "csASCII")
+  `(
+    ("US-ASCII" "iso-ir-6" "ANSI_X3.4-1968" "ANSI_X3.4-1986" "ISO_646.irv:1991" "ISO646-US" "US-ASCII" "us" "IBM367" "cp367" "csASCII")
     ("ISO_8859-1:1987" "iso-ir-100" "ISO_8859-1" "ISO-8859-1" "latin1" "l1" "IBM819" "CP819" "csISOLatin1")
     ("ISO_8859-2:1987" "iso-ir-101" "ISO_8859-2" "ISO-8859-2" "latin2" "l2" "csISOLatin2")
     ("ISO_8859-3:1988" "iso-ir-109" "ISO_8859-3" "ISO-8859-3" "latin3" "l3" "csISOLatin3")
@@ -259,4 +260,5 @@
     ("windows-1257" "cswindows1257")
     ("windows-1258" "cswindows1258")
     ("TIS-620" "csTIS620" "ISO-8859-11")
-    ("CP50220" "csCP50220")))
+    ("CP50220" "csCP50220")
+))
