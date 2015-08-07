@@ -43,3 +43,6 @@
     ;(print (file-position output))
     )
   #(195 169 195 161 197 145 197 177 195 186 197 177 12 107 195 182 114 116 101))
+
+(deftest make-in-memory-output-stream ;; just a smoke test
+  (make-in-memory-output-stream :element-type '(unsigned-byte 8)))
