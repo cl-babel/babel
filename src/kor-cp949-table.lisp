@@ -1,6 +1,6 @@
 (in-package #:babel-encodings)
 
-;;; CP949 code -> UNICODE.
+;;; SEE: http://unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP949.TXT
 (defvar +cp949->unicode+
     '(
 (#x8141 #xAC02)			;; HANGUL SYLLABLE KIYEOK A SSANGKIYEOK

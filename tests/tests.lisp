@@ -833,3 +833,13 @@
   (mapcar 'encoder/decoder-retvals
           (remove-if 'ambiguous-encoding-p
                      (list-character-encodings))))
+
+(deftest cp949 ()
+  (loop for (cp949 utf-16be)
+          in (with-open-file (in (test-file "cp949" "sexp"))
+               (read in))
+        for octets = (apply #'ub8v cp949)
+        do (is (equalp (string-to-octets (octets-to-string octets :encoding :cp949)
+                                         :encoding :utf-16be)
+                       (apply #'ub8v utf-16be)))))
+
