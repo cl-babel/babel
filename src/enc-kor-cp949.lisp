@@ -16,24 +16,28 @@
         (setf (gethash uc *ucs->cp949-hash*) cp949)))
 
 
-(defun cp949->ucs (code)
-  (if (< code #x80)
-      code
-      (multiple-value-bind (v found?)
-          (gethash code *cp949->ucs-hash*)
-        (if found?
-            v
-            nil))))
-
-
-(defun ucs->cp949 (code)
-  (if (< code #x80)
-      code
-      (multiple-value-bind (v found?)
-          (gethash code *ucs->cp949-hash*)
-        (if found?
-            v
-            nil))))
+(macrolet ((map-code-or-nil (m code (code-var) passthru?-code)
+             (let ((%v (gensym))
+                   (%found? (gensym)))
+               `(if (let ((,code-var ,code)) ,passthru?-code)
+                    ,code
+                    (multiple-value-bind (,%v ,%found?)
+                        (gethash ,code ,m)
+                      (if ,%found?
+                          ,%v
+                          nil))))))
+  ;;;
+  (defun cp949->ucs (code)
+    (declare (inline))
+    (map-code-or-nil *cp949->ucs-hash* code
+                     (c)
+                     (< c #x80)))
+  ;;;
+  (defun ucs->cp949 (code)
+    (declare (inline))
+    (map-code-or-nil *ucs->cp949-hash* code
+                     (c)
+                     (< c #x80))))
 
 
 
@@ -159,7 +163,18 @@ with larger code values can be encoded in 2 bytes."
                    `(when (not (< #x7f ,var #xc0))
                       (decf i)
                       (return-from setter-block
-                        (handle-error ,n invalid-utf8-continuation-byte)))))
+                        (handle-error ,n invalid-utf8-continuation-byte))))
+                 (->ucs-or-decoding-error (mapping-code
+                                           (err-octets err-enc
+                                                       err-buf err-pos
+                                                       err-sub err-e))
+                   (let ((%mapped (gensym)))
+                     `(let ((,%mapped ,mapping-code))
+                        (if (null ,%mapped)                            
+                            (decoding-error
+                             ,err-octets ,err-enc
+                             ,err-buf ,err-pos ,err-sub ,err-e)
+                            ,%mapped)))))
               (,setter
                (block setter-block
                  (cond
@@ -168,30 +183,18 @@ with larger code values can be encoded in 2 bytes."
                         (< #x80 u1 #xa1)
                         (< #xa0 u1 #xc6)
                         (= #xc6 u1))
-                    (progn
-                      (let ((mapped-ucs
-                             (cp949->ucs (logior (f-ash u1 8)
-                                                 (consume-octet)))))
-                        (if (null mapped-ucs)                            
-                            (decoding-error
-                                  (vector u1)
-                                  :cp949
-                                  src
-                                  i
-                                  +repl+
-                                  'character-decoding-error)
-                            mapped-ucs))))
+                    (->ucs-or-decoding-error
+                     (cp949->ucs (logior (f-ash u1 8)
+                                         (consume-octet)))
+                     ((vector u1) :cp949
+                      src i +repl+ 'character-decoding-error)))
                    ;; 1 octet
                    (t
-                    (let ((mapped-ucs (cp949->ucs u1)))
-                      (if (null mapped-ucs)
-                          (decoding-error
-                           (vector u1)
-                           :cp949
-                           src
-                           (1- i)
-                           +repl+
-                           'character-decoding-error)                             
-                          mapped-ucs)))))
-                  dest di))
+                    (->ucs-or-decoding-error
+                     (cp949->ucs u1)
+                     ((vector u1) :cp949
+                      src (1- i) +repl+ 'character-decoding-error)))))
+                 dest di))
           finally (return (the fixnum (- di d-start)))))))
+
+
