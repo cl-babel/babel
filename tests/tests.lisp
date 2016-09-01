@@ -833,3 +833,39 @@
   (mapcar 'encoder/decoder-retvals
           (remove-if 'ambiguous-encoding-p
                      (list-character-encodings))))
+
+(deftest cp949 ()
+  (flet ((to-cp949 (s) (string-to-octets s :encoding :cp949))
+         (from-cp949 (octets) (octets-to-string octets :encoding :cp949)))
+  ;;
+  (let* ((cp949-octets (apply #'ub8v '(176 252 192 218 192 231 186 184 187 236 192
+                                       204 32 177 237 192 186 32 185 221 190 223 185 217 182 243 185 208
+                                       192 187 32 199 224 199 210 32 182 167 44 32 191 192 191 194 192 204
+                                       32 176 248 199 209 32 176 205 192 187 32 186 241 195 223 190 238 32
+                                       186 184 176 237 32 191 194 176 174 32 176 237 197 235 191 161 188
+                                       173 32 176 199 179 202 180 192 180 207 182 243 46)))
+         (s-from-cp949 (from-cp949 cp949-octets))
+         (cp949-octets-2 (to-cp949 s-from-cp949)))
+    (is (equalp cp949-octets cp949-octets-2)))
+  ;; Unmappable Case #1.
+  (handler-case
+      (progn
+        (from-cp949 (apply #'ub8v '(#x80)))
+        (is nil))
+    (character-decoding-error () (is (= 1 1))))
+  ;; Unmappable Case #2.
+  (handler-case
+      (progn
+        (from-cp949 (apply #'ub8v '(#x81 #x40)))
+        (is nil))
+    (character-decoding-error () (is (= 1 1))))
+  ;; Check every mappings. (even unmappables too)
+  (loop for (cp949 utf-16be)
+     in (with-open-file (in (test-file "cp949" "sexp"))
+          (read in))
+     for octets = (apply #'ub8v cp949)
+     do (handler-case (let ((octets (from-cp949 octets)))
+                        (is (equalp (string-to-octets octets :encoding :utf-16be)
+                                    (apply #'ub8v utf-16be))))
+          (character-decoding-error (e)
+            (is (= 1 1)))))))
