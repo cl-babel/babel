@@ -27,11 +27,65 @@
 (in-package #:cl-user)
 (defpackage #:babel-tests
   (:use #:common-lisp #:babel #:babel-encodings #:hu.dwim.stefil)
+  (:import-from #:alexandria #:ignore-some-conditions)
   (:export #:run))
 (in-package #:babel-tests)
 
+(defun indented-format (level stream format-control &rest format-arguments)
+  (let ((line-prefix (make-string level :initial-element #\Space)))
+    (let ((output (format nil "~?~%" format-control format-arguments)))
+      (with-input-from-string (s output)
+        (loop for line = (read-line s nil nil) until (null line)
+              do (format stream "~A~A~%" line-prefix line))))))
+
+;; adapted from https://github.com/luismbo/stefil/blob/master/source/suite.lisp
+(defun describe-failed-tests (&key (result *last-test-result*) (stream t))
+  "Prints out a report for RESULT in STREAM.
+
+RESULT defaults to `*last-test-result*' and STREAM defaults to t"
+  (let ((descs (hu.dwim.stefil::failure-descriptions-of result)))
+    (cond ((zerop (length descs))
+           (format stream "~&~%[no failures!]"))
+          (t
+           (format stream "~&~%Test failures:~%")
+           (dotimes (i (length descs))
+             (let ((desc (aref descs i))
+                   format-control format-arguments)
+               ;; XXX: most of Stefil's conditions specialise DESCRIBE-OBJECT
+               ;; with nice human-readable messages. We should add any missing
+               ;; ones (like UNEXPECTED-ERROR) and ditch this code.
+               (etypecase desc
+                 (hu.dwim.stefil::unexpected-error
+                  (let ((c (hu.dwim.stefil::condition-of desc)))
+                    (typecase c
+                      (simple-condition
+                       (setf format-control (simple-condition-format-control c))
+                       (setf format-arguments
+                             (simple-condition-format-arguments c)))
+                      (t
+                       (setf format-control "~S"
+                             format-arguments (list c))))))
+                 (hu.dwim.stefil::failed-assertion
+                  (setf format-control (hu.dwim.stefil::format-control-of desc)
+                        format-arguments (hu.dwim.stefil::format-arguments-of desc)))
+                 (hu.dwim.stefil::missing-condition
+                  (setf format-control "~A"
+                        format-arguments (list (with-output-to-string (stream)
+                                                 (describe desc stream)))))
+                 (null
+                  (setf format-control "Test succeeded!")))
+               (format stream "~%Failure ~A: ~A when running ~S~%~%"
+                       (1+ i)
+                       (type-of desc)
+                       (hu.dwim.stefil::name-of (hu.dwim.stefil::test-of (first (hu.dwim.stefil::test-context-backtrace-of desc)))))
+               (indented-format 4 stream "~?" format-control format-arguments)))))))
+
 (defun run ()
-  (funcall-test-with-feedback-message 'babel-tests))
+  (let ((test-run (without-debugging (babel-tests))))
+    (print test-run)
+    (describe-failed-tests :result test-run)
+    (values (zerop (length (hu.dwim.stefil::failure-descriptions-of test-run)))
+            test-run)))
 
 (defsuite* (babel-tests :in root-suite))
 
@@ -53,7 +107,7 @@
      (returns ,form ,@(mapcar (lambda (x) `',x) return-values))))
 
 (defun fail (control-string &rest arguments)
-  (hu.dwim.stefil::record-failure 'hu.dwim.stefil::failed-assertion
+  (hu.dwim.stefil::record/failure 'hu.dwim.stefil::failed-assertion
                                   :format-control control-string
                                   :format-arguments arguments))
 
@@ -170,9 +224,10 @@
 ;;; Testing consistency by encoding and decoding a simple string for
 ;;; all character encodings.
 (deftest rw-equiv.1 ()
-  (dolist (*default-character-encoding* (list-character-encodings))
-    (let ((octets (string-to-octets *standard-characters*)))
-      (is (string= (octets-to-string octets) *standard-characters*)))))
+  (let ((compatible-encodings (remove :ebcdic-international (list-character-encodings))))
+    (dolist (*default-character-encoding* compatible-encodings)
+      (let ((octets (string-to-octets *standard-characters*)))
+        (is (string= (octets-to-string octets) *standard-characters*))))))
 
 ;;; FIXME: assumes little-endianness.  Easily fixable when we
 ;;; implement the BE and LE variants of :UTF-16.
@@ -283,6 +338,7 @@
                         :encoding :utf-8b)
     #(97 98 #xf0))
 
+  #+#:temporarily-disabled
   (defstest utf-8b.2
       (octets-to-string (ub8v 97 98 #xcd) :encoding :utf-8b)
     #(#\a #\b #\udccd))
@@ -869,3 +925,28 @@
                                     (apply #'ub8v utf-16be))))
           (character-decoding-error (e)
             (is (= 1 1)))))))
+
+(deftest code-point-sweep (encoding)
+  (finishes
+    (dotimes (i char-code-limit)
+      (let ((char (ignore-errors (code-char i))))
+        (when char
+          (ignore-some-conditions (character-encoding-error)
+            (string-to-octets (string char) :encoding encoding)))))))
+
+#+enable-slow-babel-tests
+(deftest code-point-sweep-all-encodings ()
+  (mapc #'code-point-sweep (list-character-encodings)))
+
+(deftest octet-sweep (encoding)
+  (finishes
+    (loop for b1 upto #xff do
+      (loop for b2 upto #xff do
+        (loop for b3 upto #xff do
+          (loop for b4 upto #xff do
+            (ignore-some-conditions (character-decoding-error)
+              (octets-to-string (ub8v b1 b2 b3 b4) :encoding encoding))))))))
+
+#+enable-slow-babel-tests
+(deftest octet-sweep-all-encodings ()
+  (mapc #'octet-sweep (list-character-encodings)))

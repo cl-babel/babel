@@ -702,23 +702,23 @@ written in big-endian byte-order without a leading byte-order mark."
           (format-symbol t '#:~a-decoder (string name))))
     (labels ((make-bom-check-form (end start getter src)
                (if (null endianness)
-                 ``(when (not (zerop (- ,,end ,,start)))
-                     (case (,,getter ,,src 0 ,',bytes :ne)
-                       (#.+byte-order-mark-code+
-                         (incf ,,start ,',bytes) nil)
-                       (#.+swapped-byte-order-mark-code-32+
-                        (incf ,,start ,',bytes) t)
-                       (t #+little-endian t)))
-                 '()))
+                   ``(when (not (zerop (- ,,end ,,start)))
+                       (case (,,getter ,,src 0 ,',bytes :ne)
+                         (#.+byte-order-mark-code+
+                          (incf ,,start ,',bytes) nil)
+                         (#.+swapped-byte-order-mark-code-32+
+                          (incf ,,start ,',bytes) t)
+                         (t #+little-endian t)))
+                   '()))
              (make-setter-form (setter code dest di)
                ``(,,setter ,,code ,,dest ,,di ,',bytes
                            ,',(or endianness :ne)))
              (make-getter-form (getter src i)
                (if (null endianness)
-                 ``(if ,',swap-var
-                     (,,getter ,,src ,,i ,',bytes :re)
-                     (,,getter ,,src ,,i ,',bytes :ne))
-                 ``(,,getter ,,src ,,i ,',bytes ,',endianness))))
+                   ``(if ,',swap-var
+                         (,,getter ,,src ,,i ,',bytes :re)
+                         (,,getter ,,src ,,i ,',bytes :ne))
+                   ``(,,getter ,,src ,,i ,',bytes ,',endianness))))
       `(progn
          (define-code-point-counter ,name (getter type)
            `(named-lambda ,',code-point-counter-name (seq start end max)
@@ -731,27 +731,27 @@ written in big-endian byte-order without a leading byte-order mark."
                   ((and (plusp max) (> count max))
                    (values max (the fixnum (+ start (* ,',bytes max)))))
                   (t
-                    ;; check for incomplete last character
-                    (unless (zerop rem)
-                      (let ((vector (make-array ,',bytes :fill-pointer 0)))
-                        (dotimes (i rem)
-                          (vector-push (,getter seq (+ i (- end rem))) vector))
-                        (decoding-error vector ,',name seq (the fixnum (- end rem)) nil
-                                        'end-of-input-in-character)
-                        (decf end rem)))
-                    (values count end))))))
+                   ;; check for incomplete last character
+                   (unless (zerop rem)
+                     (let ((vector (make-array ,',bytes :fill-pointer 0)))
+                       (dotimes (i rem)
+                         (vector-push (,getter seq (+ i (- end rem))) vector))
+                       (decoding-error vector ,',name seq (the fixnum (- end rem)) nil
+                                       'end-of-input-in-character)
+                       (decf end rem)))
+                   (values count end))))))
          (define-encoder ,name (getter src-type setter dest-type)
            `(named-lambda ,',encoder-name (src start end dest d-start)
               (declare (type ,src-type src)
                        (type ,dest-type dest)
                        (fixnum start end d-start))
               (loop for i fixnum from start below end
-                for di fixnum from d-start by ,',bytes
-                for code of-type code-point = (,getter src i) do
-                (if (>= code ,',limit)
-                  (encoding-error code ,',name src i +repl+)
-                  ,,(make-setter-form 'setter ''code ''dest ''di))
-                finally (return (the fixnum (- di d-start))))))
+                    and di fixnum from d-start by ,',bytes
+                    for code of-type code-point = (,getter src i)
+                    do (if (>= code ,',limit)
+                           (encoding-error code ,',name src i +repl+)
+                           ,,(make-setter-form 'setter ''code ''dest ''di))
+                    finally (return (the fixnum (- di d-start))))))
          (define-decoder ,name (getter src-type setter dest-type)
            `(named-lambda ,',decoder-name (src start end dest d-start)
               (declare (type ,src-type src)
@@ -760,20 +760,20 @@ written in big-endian byte-order without a leading byte-order mark."
               (let ((,',swap-var ,,(make-bom-check-form ''end ''start 'getter ''src)))
                 (declare (ignorable ,',swap-var))
                 (loop for i fixnum from start below end by ,',bytes
-                  for di from d-start
-                  do (,setter (let ((unit ,,(make-getter-form 'getter ''src ''i)))
-                                (if (>= unit ,',limit)
-                                  (decoding-error
-                                    (vector (,getter src i)
-                                            (,getter src (+ i 1))
-                                            ,@,(if (= bytes 4)
-                                                 ``((,getter src (+ i 2))
-                                                    (,getter src (+ i 3)))))
-                                    ,',name src i +repl+
-                                    'character-out-of-range)
-                                  unit))
-                              dest di)
-                  finally (return (the fixnum (- di d-start)))))))
+                      and di from d-start
+                      do (,setter (let ((unit ,,(make-getter-form 'getter ''src ''i)))
+                                    (if (>= unit ,',limit)
+                                        (decoding-error
+                                         (vector (,getter src i)
+                                                 (,getter src (+ i 1))
+                                                 ,@,(if (= bytes 4)
+                                                        ``((,getter src (+ i 2))
+                                                           (,getter src (+ i 3)))))
+                                         ,',name src i +repl+
+                                         'character-out-of-range)
+                                        unit))
+                                  dest di)
+                      finally (return (the fixnum (- di d-start)))))))
          ',name))))
 
 ;;;; UTF-32

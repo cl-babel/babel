@@ -198,7 +198,7 @@
              (#x92 #x91)
              (#x93 #x92)
              (#xa0 #x94)))))
-      (handle-error t)))
+      (handle-error)))
 
 (define-character-encoding :koi8-r
     "An 8-bit, fixed-width character Russian encoding."
@@ -384,7 +384,7 @@
              (#x92 #x91)
              (#x93 #x92)
              (#xa0 #x94)))))
-      (handle-error t)))
+      (handle-error)))
 
 (define-character-encoding :koi8-u
     "An 8-bit, fixed-width character Ukranian encoding."
@@ -574,4 +574,4 @@
              (#x92 #x91)
              (#x93 #x92)
              (#xa0 #x94)))))
-      (handle-error t)))
+      (handle-error)))
