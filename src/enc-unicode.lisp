@@ -524,9 +524,9 @@ code points for each invalid byte."
   (check-type name keyword)
   (let ((swap-var (gensym "SWAP"))
         (code-point-counter-name
-          (format-symbol t '#:~a-code-point-counter (string name)))
-        (encoder-name (format-symbol t '#:~a-encoder (string name)))
-        (decoder-name (format-symbol t '#:~a-decoder (string name))))
+         (format-symbol t (string '#:~a-code-point-counter) (string name)))
+        (encoder-name (format-symbol t (string '#:~a-encoder) (string name)))
+        (decoder-name (format-symbol t (string '#:~a-decoder) (string name))))
     (labels ((make-bom-check-form (end start getter seq)
                (if (null endianness)
                  ``((,',swap-var
@@ -695,11 +695,9 @@ written in big-endian byte-order without a leading byte-order mark."
   (check-type endianness (or null (eql :le) (eql :be)))
   (let ((swap-var (gensym "SWAP"))
         (code-point-counter-name
-          (format-symbol t '#:~a-code-point-counter (string name)))
-        (encoder-name
-          (format-symbol t '#:~a-encoder (string name)))
-        (decoder-name
-          (format-symbol t '#:~a-decoder (string name))))
+         (format-symbol t (string '#:~a-code-point-counter) (string name)))
+        (encoder-name (format-symbol t (string '#:~a-encoder) (string name)))
+        (decoder-name (format-symbol t (string '#:~a-decoder) (string name))))
     (labels ((make-bom-check-form (end start getter src)
                (if (null endianness)
                    ``(when (not (zerop (- ,,end ,,start)))
