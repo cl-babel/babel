@@ -27,3 +27,5 @@ script:
   - cl -e '(ql:quickload :babel-tests)
            (unless (babel-tests:run)
              (uiop:quit 1))'
+
+sudo: required
