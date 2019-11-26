@@ -480,6 +480,7 @@ RESULT defaults to `*last-test-result*' and STREAM defaults to t"
     (is (= (count #\ufffd string) expected-errors))))
 
 (deftest utf8-decode-tests (octets expected-results)
+  (setf expected-results (coerce expected-results '(simple-array character (*))))
   (let ((expected-errors (count #\? expected-results))
         (expected-results (substitute #\ufffd #\? expected-results)))
     (utf8-decode-test octets expected-results expected-errors)
@@ -861,7 +862,7 @@ RESULT defaults to `*last-test-result*' and STREAM defaults to t"
                       :encoding :utf-32 :errorp t)))
 
 ;;; RT: encoders and decoders were returning bogus values.
-(deftest encoder/decoder-retvals (encoding &optional (test-string "abc"))
+(deftest encoder/decoder-retvals (encoding &optional (test-string (coerce "abc" '(simple-array character (*)))))
   (let* ((mapping (lookup-mapping babel::*string-vector-mappings* encoding))
          (strlen (length test-string))
          ;; encoding
