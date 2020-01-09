@@ -382,13 +382,14 @@ been output since the last call to GET-OUTPUT-STREAM-SEQUENCE or since
 the creation of the stream, whichever occurred most recently. If
 AS-LIST is true the return value is coerced to a list."
   (declare (optimize speed))
-  (prog1
-      (ecase return-as
-        (vector (vector-stream-vector stream))
-        (string (octets-to-string (vector-stream-vector stream)
-                                  :encoding (external-format-of stream)))
-        (list (coerce (vector-stream-vector stream) 'list)))
-    (setf (vector-stream-vector stream) (make-vector-stream-buffer))))
+  (let ((vector (vector-stream-vector stream)))
+    (prog1
+	(ecase return-as
+          (vector vector)
+          (string (octets-to-string vector :encoding (external-format-of stream)))
+          (list (coerce vector 'list)))
+      (setf (vector-stream-vector stream)
+	    (make-vector-stream-buffer :element-type (element-type-of stream))))))
 
 (defmacro with-output-to-sequence
     ((var &key (return-as ''vector) (element-type '':default)
