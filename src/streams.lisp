@@ -315,11 +315,11 @@ contains the octes that were actually output."
 (defmethod stream-write-char ((stream vector-output-stream) char)
   (declare (optimize speed))
   (check-if-open stream)
-  (check-if-accepts-characters stream)
-  ;; TODO this is naiive here, there's room for optimization
-  (let ((octets (string-to-octets (string char)
-                                  :encoding (external-format-of stream))))
-    (extend-vector-output-stream-buffer octets stream))
+  (if (eq (element-type-of stream) 'character)
+      (vector-push-extend char (vector-stream-vector stream))
+      (let ((octets (string-to-octets (string char)
+                                      :encoding (external-format-of stream))))
+	(extend-vector-output-stream-buffer octets stream)))
   char)
 
 (defmethod stream-write-sequence ((stream vector-output-stream)
