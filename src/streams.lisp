@@ -86,9 +86,9 @@
 (defclass in-memory-stream (trivial-gray-stream-mixin)
   ((element-type                  ; :default means bivalent
     :initform :default :initarg :element-type :accessor element-type-of)
-   (external-format
+   (%external-format
     :initform (ensure-external-format *default-character-encoding*)
-    :initarg :external-format :accessor external-format-of)
+    :initarg :%external-format :accessor external-format-of)
    #+cmu
    (open-p
     :initform t :accessor in-memory-stream-open-p
@@ -159,7 +159,7 @@ contains the octes that were actually output."
                             (t (error "Illegal element-type ~S" element-type)))
                           :initial-size initial-buffer-size)
                  :element-type element-type
-                 :external-format (ensure-external-format external-format)))
+                 :%external-format (ensure-external-format external-format)))
 
 (defun make-in-memory-input-stream (data &key (element-type :default)
                                     external-format)
@@ -173,7 +173,7 @@ contains the octes that were actually output."
                  :vector data
                  :element-type element-type
                  :end (length data)
-                 :external-format (ensure-external-format external-format)))
+                 :%external-format (ensure-external-format external-format)))
 
 (defclass vector-stream ()
   ((vector
