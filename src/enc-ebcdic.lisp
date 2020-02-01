@@ -3,6 +3,7 @@
 ;;; enc-ebcdic.lisp --- EBCDIC encodings.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
+;;; Copyright (C) 2020, Timo Myyrä  <timo.myyra@bittivirhe.fi>
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person
 ;;; obtaining a copy of this software and associated documentation
@@ -29,6 +30,10 @@
 (define-character-encoding :ebcdic-us
     "An alleged character set used on IBM dinosaurs."
   :aliases '(:ibm-037))
+
+(define-character-encoding :ebcdic-us-euro
+    "An alleged character set used on IBM dinosaurs using Euro sign."
+  :aliases '(:ibm-1140))
 
 (define-character-encoding :ebcdic-278
     "A character set used on IBM mainframes in Finland/Sweden."
@@ -77,6 +82,18 @@
 
 (define-unibyte-decoder :ebcdic-us (octet)
   (aref +ebcdic-decode-table+ octet))
+
+(define-unibyte-encoder :ebcdic-us-euro (code)
+  (if (>= code 256)
+      (handle-error)
+      (if (= code #x20ac)
+          #x9f
+          (aref +ebcdic-encode-table+ code))))
+
+(define-unibyte-decoder :ebcdic-us-euro (octet)
+  (if (= octet #x9f)
+      #x20ac
+      (aref +ebcdic-decode-table+ octet)))
 
 (defun ebcdic-278-encoder (code)
   (if (>= code 256)
