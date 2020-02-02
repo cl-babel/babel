@@ -910,3 +910,22 @@ RESULT defaults to `*last-test-result*' and STREAM defaults to t"
 #+enable-slow-babel-tests
 (deftest octet-sweep-all-encodings ()
   (mapc #'octet-sweep (list-character-encodings)))
+
+(deftest ebcdic-euro ()
+  (let ((utf8-string "Ääkköset toimii kun valuutta on €")
+        (ebcdic-278 (make-array 17
+                                :element-type '(unsigned-byte 8)
+                                :initial-contents '(#x7b #xc0 #x92 #x92 #x6a #xa2 #x85 #xa3
+                                                    #x40 #xa3 #x96 #x89 #x94 #x89 #x89 #x40
+                                                    #x00)))
+        (ebcdic-1143 (make-array 33
+                                 :element-type '(unsigned-byte 8)
+                                 :initial-contents '(#x7b #xc0 #x92 #x92 #x6a #xa2 #x85 #xa3
+                                                     #x40 #xa3 #x96 #x89 #x94 #x89 #x89 #x40
+                                                     #x92 #xa4 #x95 #x40 #xa5 #x81 #x93 #xa4
+                                                     #xa4 #xa3 #xa3 #x81 #x40 #x96 #x95 #x40
+                                                     #x5a))))
+    (is (equalp (babel:octets-to-string ebcdic-1143 :encoding :ebcdic-1143)
+                utf8-string))
+    (is (char= (char (babel:octets-to-string ebcdic-1143 :encoding :ebcdic-278) 32)
+               #\CURRENCY_SIGN))))
