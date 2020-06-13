@@ -204,4 +204,4 @@
         (#x2592 #xFD)
         (#x2593 #xFE)
         (#x25A0 #xFF)
-        (T (handle-error)))))
+        (t (handle-error)))))
