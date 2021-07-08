@@ -92,6 +92,13 @@ character encoding object."
     (format s "~&~A~%~%" documentation))
   (call-next-method))
 
+(defun lookup-alias-from-official-csv (name)
+  (loop
+     for row in *official-encoding-aliases*
+     when (member name row :test #'equalp)
+     return row
+     finally (return nil)))
+
 (defvar *supported-character-encodings* nil)
 
 (defun list-character-encodings ()
@@ -99,7 +106,7 @@ character encoding object."
 encodings.  This list does not include aliases."
   *supported-character-encodings*)
 
-(defvar *character-encodings* (make-hash-table :test 'eq))
+(defvar *character-encodings* (make-hash-table :test 'equalp))
 
 (defvar *default-character-encoding* :utf-8
   "Special variable used to determine the default character
@@ -113,6 +120,8 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
     (return-from get-character-encoding name))
   (when (eq name :default)
     (setq name *default-character-encoding*))
+  (when (typep name 'keyword)
+    (setq name (symbol-name name)))
   (or (gethash name *character-encodings*)
       (error "Unknown character encoding: ~S" name)))
 
@@ -121,9 +130,14 @@ a CHARACTER-ENCONDING object, it is returned unmodified."
 
 (defun notice-character-encoding (enc)
   (pushnew (enc-name enc) *supported-character-encodings*)
-  (dolist (kw (cons (enc-name enc) (enc-aliases enc)))
-    (setf (gethash kw *character-encodings*) enc))
-  (enc-name enc))
+  (let ((official-aliases (lookup-alias-from-official-csv
+                           (symbol-name (enc-name enc)))))
+    (dolist (kw (cons (symbol-name (enc-name enc))
+                      (append
+                       (mapcar #'symbol-name (enc-aliases enc))
+                       official-aliases)))
+      (setf (gethash kw *character-encodings*) enc))
+    (enc-name enc)))
 
 (defmacro define-character-encoding (name docstring &body options)
   `(notice-character-encoding

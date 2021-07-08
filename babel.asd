@@ -34,6 +34,7 @@
     :serial t
     :components
     ((:file "packages")
+     (:file "official-encoding-aliases")
      (:file "encodings")
      (:file "enc-ascii")
      (:file "enc-ebcdic")
