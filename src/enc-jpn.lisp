@@ -466,17 +466,33 @@
                    (cp932 (parse-integer (subseq line 26 30) :radix 16)))
                (setf (gethash ucs *ucs-to-cp932-hash*) cp932)))))
 
-(defun eucjp-to-ucs (code)
-  (values (gethash code *eucjp-to-ucs-hash*)))
+(defun eucjp-to-ucs (code index)
+  (or
+   (gethash code *eucjp-to-ucs-hash*)
+   (restart-case
+       (decoding-error code :eucjp +repl+ index)
+     (retry-code (value) value))))
 
-(defun ucs-to-eucjp (code)
-  (values (gethash code *ucs-to-eucjp-hash*)))
+(defun ucs-to-eucjp (code index)
+  (or
+   (gethash code *ucs-to-eucjp-hash*)
+   (restart-case
+       (encoding-error code :eucjp +repl+ index)
+     (retry-code (value) value))))
 
-(defun cp932-to-ucs (code)
-  (values (gethash code *cp932-to-ucs-hash*)))
+(defun cp932-to-ucs (code index)
+  (or
+   (gethash code *cp932-to-ucs-hash*)
+   (restart-case
+       (decoding-error code :cp932 +repl+ index)
+     (retry-code (value) value))))
 
-(defun ucs-to-cp932 (code)
-  (values (gethash code *ucs-to-cp932-hash*)))
+(defun ucs-to-cp932 (code index)
+  (or
+   (gethash code *ucs-to-cp932-hash*)
+   (restart-case
+       (encoding-error code :cp932 +repl+ index)
+     (retry-code (value) value))))
 
 ;;;; EUC-JP
 
@@ -495,7 +511,7 @@ in 2 to 3 bytes."
      (loop with noctets fixnum = 0
            for i fixnum from start below end
            for code of-type code-point = (,getter seq i)
-           do (let* ((c (ucs-to-eucjp code))
+           do (let* ((c (ucs-to-eucjp code i))
                      (new (+ (cond ((< #xffff c) 3)
                                    ((< #xff c) 2)
                                    (t 1))
@@ -549,7 +565,7 @@ in 2 to 3 bytes."
            for i fixnum from start below end
            for code of-type code-point = (,getter src i)
            for eucjp of-type code-point
-             = (ucs-to-eucjp code) do
+             = (ucs-to-eucjp code i) do
                (macrolet ((set-octet (offset value)
                             `(,',setter ,value dest (the fixnum (+ di ,offset)))))
                  (cond
@@ -613,15 +629,15 @@ in 2 to 3 bytes."
                        (setq u2 (consume-octet))
                        (eucjp-to-ucs (logior #x8f0000
                                              (f-ash u2 8)
-                                             (consume-octet))))
+                                             (consume-octet)) i))
                       ;; 2 octets
                       ((or (= u1 #x8e)
                            (< #xa0 u1 #xff))
                        (eucjp-to-ucs (logior (f-ash u1 8)
-                                             (consume-octet))))
+                                             (consume-octet)) i))
                       ;; 1 octet
                       (t
-                       (eucjp-to-ucs u1))))
+                       (eucjp-to-ucs u1 i))))
                   dest di))
          finally (return (the fixnum (- di d-start)))))))
 
@@ -642,7 +658,7 @@ in 2 bytes."
      (loop with noctets fixnum = 0
            for i fixnum from start below end
            for code of-type code-point = (,getter seq i)
-           do (let* ((c (ucs-to-cp932 code))
+           do (let* ((c (ucs-to-cp932 code i))
                      (new (+ (cond ((< #xff c) 2)
                                    (t 1))
                              noctets)))
@@ -695,7 +711,7 @@ in 2 bytes."
            for i fixnum from start below end
            for code of-type code-point = (,getter src i)
            for cp932 of-type code-point
-             = (ucs-to-cp932 code) do
+             = (ucs-to-cp932 code i) do
                (macrolet ((set-octet (offset value)
                             `(,',setter ,value dest (the fixnum (+ di ,offset)))))
                  (cond
@@ -759,9 +775,9 @@ in 2 bytes."
                            (<= #xe0 u1 #xfc))
                        (setq u2 (consume-octet))
                        (cp932-to-ucs (logior (f-ash u1 8)
-                                             u2)))
+                                             u2) i))
                       ;; 1 octet
                       (t
-                       (cp932-to-ucs u1))))
+                       (cp932-to-ucs u1 i))))
                   dest di))
          finally (return (the fixnum (- di d-start)))))))
