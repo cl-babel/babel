@@ -41,7 +41,8 @@
 character codes map to their Unicode equivalents.  Intended to
 support most characters used in most Western European languages."
   :aliases '(:latin-1 :latin1)
-  :literal-char-code-limit 256)
+  :literal-char-code-limit 256
+  :codespace '((0 256)))
 
 (define-unibyte-encoder :iso-8859-1 (code)
   (if (>= code 256)
@@ -51,14 +52,6 @@ support most characters used in most Western European languages."
 (define-unibyte-decoder :iso-8859-1 (octet)
   octet)
 
-(define-character-encoding :iso-8859-2
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in most languages used in Central/Eastern
-Europe."
-  :aliases '(:latin-2 :latin2)
-  :literal-char-code-limit #xa0)
 
 (define-constant +unicode-00a0-0180-to-iso-8859-2+
     #(#xa0 nil nil nil #xa4 nil nil #xa7 ; #xa0-#xa7
@@ -99,6 +92,17 @@ Europe."
       #xa2 #xff nil #xb2 nil #xbd nil nil) ; #x2d8-#x2df
   :test #'equalp)
 
+(define-character-encoding :iso-8859-2
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in most languages used in Central/Eastern
+Europe."
+  :aliases '(:latin-2 :latin2)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0) (#xa0 #x180 ,+unicode-00a0-0180-to-iso-8859-2+)
+               (#x2c0 #x2df ,+unicode-02c0-02e0-to-iso-8859-2+)))
+
 (define-unibyte-encoder :iso-8859-2 (code)
   (or (cond ((< code #xa0) code)
             ((< code #x180)
@@ -135,13 +139,6 @@ Europe."
       octet
       (svref +iso-8859-2-to-unicode+ (the ub8 (- octet #xa0)))))
 
-(define-character-encoding :iso-8859-3
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in most languages used in Southern Europe."
-  :aliases '(:latin-3 :latin3)
-  :literal-char-code-limit #xa0)
 
 (define-constant +unicode-a0-100-to-iso-8859-3+
     #(#xa0 nil nil #xa3 #xa4 nil nil #xa7 ; #xa0-#xa7
@@ -179,6 +176,18 @@ characters found in most languages used in Southern Europe."
 (define-constant +unicode-2d8-2e0-to-iso-8859-3+
     #(#xa2 #xff nil nil nil nil nil nil) ; #x2d8-#x2df
   :test #'equalp)
+
+(define-character-encoding :iso-8859-3
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in most languages used in Southern Europe."
+  :aliases '(:latin-3 :latin3)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0 #x100 ,+unicode-a0-100-to-iso-8859-3+)
+               (#x108 #x17f ,+unicode-108-180-to-iso-8859-3+)
+               (#x2d8 #x2df ,+unicode-2d8-2e0-to-iso-8859-3+)))
 
 (define-unibyte-encoder :iso-8859-3 (code)
   (or (cond ((< code #xa0) code)
@@ -219,14 +228,6 @@ characters found in most languages used in Southern Europe."
       octet
       (svref +iso-8859-3-to-unicode+ (the ub8 (- octet #xa0)))))
 
-(define-character-encoding :iso-8859-4
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in most languages used in Northern Europe."
-  :aliases '(:latin-4 :latin4)
-  :literal-char-code-limit #xa0)
-
 (define-constant +unicode-a0-180-to-iso-8859-4+
     #(#xa0 nil nil nil #xa4 nil nil #xa7 ; #xa0-#xa7
       #xa8 nil nil nil nil #xad nil #xaf ; #xa8-#xaf
@@ -265,6 +266,17 @@ characters found in most languages used in Northern Europe."
       nil #xff nil #xb2 nil nil nil nil) ; #x2d8-#x2df
   :test #'equalp)
 
+(define-character-encoding :iso-8859-4
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in most languages used in Northern Europe."
+  :aliases '(:latin-4 :latin4)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #x180 ,+unicode-a0-180-to-iso-8859-4+)
+               (#x2c0 #x2df ,+unicode-2c0-2e0-to-iso-8859-4+)))
+
 (define-unibyte-encoder :iso-8859-4 (code)
   (or (cond ((< code #xa0) code)
             ((< code #x180)
@@ -301,14 +313,6 @@ characters found in most languages used in Northern Europe."
       octet
       (svref +iso-8859-4-to-unicode+ (the ub8 (- octet #xa0)))))
 
-(define-character-encoding :iso-8859-5
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in the Cyrillic alphabet."
-  :aliases '(:cyrillic)
-  :literal-char-code-limit #xa0)
-
 (define-constant +unicode-a0-b0-to-iso-8859-5+
     #(#xa0 nil nil nil nil nil nil #xfd ; #xa0-#xa7
       nil nil nil nil nil #xad nil nil) ; #xa8-#xaf
@@ -329,17 +333,17 @@ characters found in the Cyrillic alphabet."
       #xf8 #xf9 #xfa #xfb #xfc nil #xfe #xff) ; #x458-#x45f
   :test #'equalp)
 
-(define-unibyte-encoder :iso-8859-5 (code)
-  (or (cond ((< code #xa0) code)
-            ((< code #xb0)
-             (svref +unicode-a0-b0-to-iso-8859-5+
-                    (the ub8 (- code #xa0))))
-            ((<= #x400 code #x45f)
-             (svref +unicode-400-460-to-iso-8859-5+
-                    (the ub8 (- code #x400))))
-            ;; the Numero sign
-            ((= code #x2116) #xf0))
-      (handle-error)))
+(define-character-encoding :iso-8859-5
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in the Cyrillic alphabet."
+  :aliases '(:cyrillic)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #xb0 ,+unicode-a0-b0-to-iso-8859-5+)
+               (#x400 #x45f ,+unicode-400-460-to-iso-8859-5+)
+               #x2116))
 
 (define-constant +iso-8859-5-to-unicode+
     #(;; #xa0
@@ -362,18 +366,22 @@ characters found in the Cyrillic alphabet."
       #x0458 #x0459 #x045a #x045b #x045c #x00a7 #x045e #x045f)
   :test #'equalp)
 
+(define-unibyte-encoder :iso-8859-5 (code)
+  (or (cond ((< code #xa0) code)
+            ((< code #xb0)
+             (svref +unicode-a0-b0-to-iso-8859-5+
+                    (the ub8 (- code #xa0))))
+            ((<= #x400 code #x45f)
+             (svref +unicode-400-460-to-iso-8859-5+
+                    (the ub8 (- code #x400))))
+            ;; the Numero sign
+            ((= code #x2116) #xf0))
+      (handle-error)))
+
 (define-unibyte-decoder :iso-8859-5 (octet)
   (if (< octet #xa0)
       octet
       (svref +iso-8859-5-to-unicode+ (the ub8 (- octet #xa0)))))
-
-(define-character-encoding :iso-8859-6
-    "An 8-bit, fixed-width character encoding in which codes #x00-#x9f
-map to their Unicode equivalents and other codes map to other Unicode
-character values.  Intended to provide most characters found in the
-Arabic alphabet."
-  :aliases '(:arabic)
-  :literal-char-code-limit #xa0)
 
 (define-constant +unicode-a0-b0-to-iso-8859-6+
     #(#xa0 nil nil nil #xa4 nil nil nil ; #xa0-#xa7
@@ -392,6 +400,17 @@ Arabic alphabet."
       #xe8 #xe9 #xea #xeb #xec #xed #xee #xef ; #x648-#x64f
       #xf0 #xf1 #xf2 nil nil nil nil nil)     ; #x650-#x657
   :test #'equalp)
+
+(define-character-encoding :iso-8859-6
+    "An 8-bit, fixed-width character encoding in which codes #x00-#x9f
+map to their Unicode equivalents and other codes map to other Unicode
+character values.  Intended to provide most characters found in the
+Arabic alphabet."
+  :aliases '(:arabic)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #xb0 ,+unicode-a0-b0-to-iso-8859-6+)
+               (#x608 #x657 ,+unicode-608-658-to-iso-8859-6+)))
 
 (define-unibyte-encoder :iso-8859-6 (code)
   (or (cond ((< code #xa0) code)
@@ -429,14 +448,6 @@ Arabic alphabet."
       octet
       (svref +iso-8859-6-to-unicode+ (the ub8 (- octet #xa0)))))
 
-(define-character-encoding :iso-8859-7
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in the Greek alphabet."
-  :aliases '(:greek)
-  :literal-char-code-limit #xa0)
-
 (define-constant +unicode-a0-c0-to-iso-8859-7+
     #(#xa0 nil nil #xa3 nil nil #xa6 #xa7  ; #xa0-#xa7
       #xa8 #xa9 nil #xab #xac #xad nil nil ; #xa8-#xaf
@@ -466,6 +477,19 @@ characters found in the Greek alphabet."
 (define-constant +unicode-20ac-20b0-to-iso-8859-7+
     #(#xa4 nil nil #xa5)
   :test #'equalp)
+
+(define-character-encoding :iso-8859-7
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in the Greek alphabet."
+  :aliases '(:greek)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #xc0 ,+unicode-a0-c0-to-iso-8859-7+)
+               (#x378 #x3cf ,+unicode-378-3d0-to-iso-8859-7+)
+               (#x2010 #x201f ,+unicode-2010-2020-to-iso-8859-7+)
+               (#x20ac #x20af ,+unicode-20ac-20b0-to-iso-8859-7+)))
 
 (define-unibyte-encoder :iso-8859-7 (code)
   (or (cond ((< code #xa0) code)
@@ -509,14 +533,6 @@ characters found in the Greek alphabet."
       octet
       (svref +iso-8859-7-to-unicode+ (the ub8 (- octet #xa0)))))
 
-(define-character-encoding :iso-8859-8
-    "An 8-bit, fixed-width character encoding in which codes #x00-#x9f
-map to their Unicode equivalents and other codes map to other Unicode
-character values.  Intended to provide most characters found in the
-Hebrew alphabet."
-  :aliases '(:hebrew)
-  :literal-char-code-limit #xa0)
-
 (define-constant +unicode-a0-f8-to-iso-8859-8+
     #(#xa0 nil #xa2 #xa3 #xa4 #xa5 #xa6 #xa7 ; #xa0-#xa7
       #xa8 #xa9 nil #xab #xac #xad #xae #xaf ; #xa8-#xaf
@@ -542,6 +558,18 @@ Hebrew alphabet."
     #(nil nil nil nil nil nil #xfd #xfe   ; #x2008-#x200f
       nil nil nil nil nil nil nil #xdf)   ; #x2010-#x2017
   :test #'equalp)
+
+(define-character-encoding :iso-8859-8
+    "An 8-bit, fixed-width character encoding in which codes #x00-#x9f
+map to their Unicode equivalents and other codes map to other Unicode
+character values.  Intended to provide most characters found in the
+Hebrew alphabet."
+  :aliases '(:hebrew)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #xf8 ,+unicode-a0-f8-to-iso-8859-8+)
+               (#x5d0 #x5ef ,+unicode-5d0-5f0-to-iso-8859-8+)
+               (#x2008 #x201f ,+unicode-2008-2018-to-iso-8859-8+)))
 
 (define-unibyte-encoder :iso-8859-8 (code)
   (or (cond ((< code #xa0) code)
@@ -582,15 +610,6 @@ Hebrew alphabet."
       octet
       (svref +iso-8859-8-to-unicode+ (the ub8 (- octet #xa0)))))
 
-(define-character-encoding :iso-8859-9
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#xcf map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in the Turkish alphabet."
-  :aliases '(:latin-5 :latin5)
-  :decode-literal-code-unit-limit #xd0
-  :encode-literal-code-unit-limit #xa0)
-
 (define-constant +unicode-d0-100-to-iso-8859-9+
     #(nil #xd1 #xd2 #xd3 #xd4 #xd5 #xd6 #xd7 ; #xd0-#xd7
       #xd8 #xd9 #xda #xdb #xdc nil nil #xdf  ; #xd8-#xdf
@@ -611,6 +630,18 @@ characters found in the Turkish alphabet."
       nil nil nil nil nil nil nil nil   ; #x150-#x157
       nil nil nil nil nil nil #xde #xfe) ; #x158-#x15f
   :test #'equalp)
+
+(define-character-encoding :iso-8859-9
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#xcf map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in the Turkish alphabet."
+  :aliases '(:latin-5 :latin5)
+  :decode-literal-code-unit-limit #xd0
+  :encode-literal-code-unit-limit #xa0
+  :codespace `((0 #xd0)
+               (#xa0  #x100 ,+unicode-d0-100-to-iso-8859-9+)
+               (#x118  #x15f ,+unicode-118-160-to-iso-8859-9+)))
 
 (define-unibyte-encoder :iso-8859-9 (code)
   (or (cond ((< code #xd0) code)
@@ -638,14 +669,6 @@ characters found in the Turkish alphabet."
   (if (< octet #xd0)
       octet
       (svref +iso-8859-9-to-unicode+ (the ub8 (- octet #xd0)))))
-
-(define-character-encoding :iso-8859-10
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in Nordic alphabets."
-  :aliases '(:latin-6 :latin6)
-  :literal-char-code-limit #xa0)
 
 (define-constant +unicode-a0-180-to-iso-8859-10+
     #(#xa0 nil nil nil nil nil nil #xa7  ; #xa0-#xa7
@@ -677,6 +700,17 @@ characters found in Nordic alphabets."
       nil nil #xd9 #xf9 nil nil nil nil      ; #x170-#x177
       nil nil nil nil nil #xac #xbc nil)     ; #x178-#x17f
   :test #'equalp)
+
+(define-character-encoding :iso-8859-10
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in Nordic alphabets."
+  :aliases '(:latin-6 :latin6)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #x180 ,+unicode-a0-180-to-iso-8859-10+)
+               #x2015))
 
 (define-unibyte-encoder :iso-8859-10 (code)
   (or (cond ((< code #xa0) code)
@@ -719,7 +753,10 @@ characters found in Nordic alphabets."
 other Unicode character values.  Intended to provide most
 characters found the Thai alphabet."
   :aliases '()
-  :literal-char-code-limit #xa0)
+  :literal-char-code-limit #xa0
+  :codespace '((0 #xa1)
+               (#xe01 #xe3b)
+               (#xe3e #xe5b)))
 
 (define-unibyte-encoder :iso-8859-11 (code)
   (cond ((< code #xa1) code)
@@ -739,14 +776,6 @@ characters found the Thai alphabet."
         (t (handle-error))))
 
 ;;; There is no iso-8859-12 encoding.
-
-(define-character-encoding :iso-8859-13
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in Baltic alphabets."
-  :aliases '()
-  :literal-char-code-limit #xa0)
 
 (define-constant +unicode-a0-180-to-iso-8859-13+
     #(#xa0 nil #xa2 #xa3 #xa4 nil #xa6 #xa7 ; #xa0-#xa7
@@ -783,6 +812,17 @@ characters found in Baltic alphabets."
     #(nil #xff nil nil #xb4 #xa1 #xa5 nil) ; #x2018-#x201f
   :test #'equalp)
 
+(define-character-encoding :iso-8859-13
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in Baltic alphabets."
+  :aliases '()
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #x180 ,+unicode-a0-180-to-iso-8859-13+)
+               (x2018 #x201f ,+unicode-2018-2020-to-iso-8859-13+)))
+
 (define-unibyte-encoder :iso-8859-13 (code)
   (or (cond ((< code #xa0) code)
             ((< code #x180)
@@ -818,14 +858,6 @@ characters found in Baltic alphabets."
   (if (< octet #xa0)
       octet
       (svref +iso-8859-13-to-unicode+ (the ub8 (- octet #xa0)))))
-
-(define-character-encoding :iso-8859-14
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in Celtic languages."
-  :aliases '(:latin-8 :latin8)
-  :literal-char-code-limit #xa0)
 
 (define-constant +unicode-a0-100-to-iso-8859-14+
     #(#xa0 nil nil #xa3 nil nil nil #xa7 ; #xa0-#xa7
@@ -878,6 +910,20 @@ characters found in Celtic languages."
     #(nil nil #xac #xbc nil nil nil nil) ; #x1ef0-#x1ef7
   :test #'equalp)
 
+(define-character-encoding :iso-8859-14
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in Celtic languages."
+  :aliases '(:latin-8 :latin8)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #x100 ,+unicode-a0-100-to-iso-8859-14+)
+               (#x108 #x127 ,+unicode-108-128-to-iso-8859-14+)
+               (#x170 #x17f ,+unicode-170-180-to-iso-8859-14+)
+               (#x1e00 #x1e87 ,+unicode-1e00-1e88-to-iso-8859-14+)
+               (#x1ef0  #x1ef7 ,+unicode-1ef0-1ef8-to-iso-8859-14+)))
+
 (define-unibyte-encoder :iso-8859-14 (code)
   (or (cond ((< code #xa0) code)
             ((< code #x100)
@@ -923,15 +969,6 @@ characters found in Celtic languages."
       octet
       (svref +iso-8859-14-to-unicode+ (the ub8 (- octet #xa0)))))
 
-(define-character-encoding :iso-8859-15
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in Western European languages (including the
-Euro sign and some other characters missing from ISO-8859-1."
-  :aliases '(:latin-9 :latin9)
-  :literal-char-code-limit #xa0)
-
 (define-constant +unicode-a0-100-to-iso-8859-15+
     #(#xa0 #xa1 #xa2 #xa3 nil #xa5 nil #xa7  ; #xa0-#xa7
       nil #xa9 #xaa #xab #xac #xad #xae #xaf ; #xa8-#xaf
@@ -955,6 +992,19 @@ Euro sign and some other characters missing from ISO-8859-1."
       nil nil nil nil nil nil nil nil   ; #x170-#x177
       #xbe nil nil nil nil #xb4 #xb8 nil) ; #x178-#x17f
   :test #'equalp)
+
+(define-character-encoding :iso-8859-15
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in Western European languages (including the
+Euro sign and some other characters missing from ISO-8859-1."
+  :aliases '(:latin-9 :latin9)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #x100 ,+unicode-a0-100-to-iso-8859-15+)
+               (#x150 #x1f7 ,+unicode-150-180-to-iso-8859-15+)
+               #x20ac))
 
 (define-unibyte-encoder :iso-8859-15 (code)
   (or (cond ((< code #xa0) code)
@@ -998,14 +1048,6 @@ Euro sign and some other characters missing from ISO-8859-1."
       octet
       (svref +iso-8859-15-to-unicode+ (the ub8 (- octet #xa0)))))
 
-(define-character-encoding :iso-8859-16
-    "An 8-bit, fixed-width character encoding in which codes
-#x00-#x9f map to their Unicode equivalents and other codes map to
-other Unicode character values.  Intended to provide most
-characters found in Southeast European languages."
-  :aliases '(:latin-10 :latin10)
-  :literal-char-code-limit #xa0)
-
 (define-constant +unicode-a0-180-to-iso-8859-16+
     #(#xa0 nil nil nil nil nil nil #xa7  ; #xa0-#xa7
       nil #xa9 nil #xab nil #xad nil nil ; #xa8-#xaf
@@ -1044,6 +1086,19 @@ characters found in Southeast European languages."
 (define-constant +unicode-2018-2020-to-iso-8859-16+
     #(nil nil nil nil nil #xb5 #xa5 nil) ; #x2018-#x201f
   :test #'equalp)
+
+(define-character-encoding :iso-8859-16
+    "An 8-bit, fixed-width character encoding in which codes
+#x00-#x9f map to their Unicode equivalents and other codes map to
+other Unicode character values.  Intended to provide most
+characters found in Southeast European languages."
+  :aliases '(:latin-10 :latin10)
+  :literal-char-code-limit #xa0
+  :codespace `((0 #xa0)
+               (#xa0  #x180 ,+unicode-a0-180-to-iso-8859-16+)
+               (#x218  #x21f ,+unicode-218-220-to-iso-8859-16+)
+               (#x2018 #x201f ,+unicode-2018-2020-to-iso-8859-16+)
+               #x20ac))
 
 (define-unibyte-encoder :iso-8859-16 (code)
   (or (cond ((< code #xa0) code)

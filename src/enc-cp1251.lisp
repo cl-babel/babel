@@ -26,11 +26,6 @@
 
 (in-package #:babel-encodings)
 
-(define-character-encoding :cp1251
-    "An 8-bit, fixed-width character Russian encoding from Windows."
-  :aliases '(:windows-1251)
-  :literal-char-code-limit #x80)
-
 (define-constant +cp1251-to-unicode+
     #(;; #x80
       #x0402 #x0403 #x201a #x0453 #x201e #x2026 #x2020 #x2021
@@ -101,11 +96,21 @@
       #x00 #x8b #x9b #x00 #x00 #x00 #x00 #x00) ; #x38-#x3f
   :test #'equalp)
 
+(define-character-encoding :cp1251
+    "An 8-bit, fixed-width character Russian encoding from Windows."
+  :aliases '(:windows-1251)
+  :literal-char-code-limit #x80
+  :codespace `((#x0 #x80)
+               (#xa0 #xc0 ,+unicode-a0-bf-to-cp1251+)
+               (#x400 #x498 ,+unicode-0-97-to-cp1251+)
+               (#x2010 #x2040 ,+unicode-10-3f-to-cp1251+)
+               #x20ac #x2116 #x2122))
+
 (define-unibyte-encoder :cp1251 (code)
   (cond
     ((< code #x80) code)
     ((and (>= code #xa0) (< code #xc0))
-     (svref +unicode-a0-bf-to-cp1251+
+     (svref  +unicode-a0-bf-to-cp1251+
             (the ub8 (- code #xa0))))
     ((and (>= code #x400) (< code #x498))
      (svref +unicode-0-97-to-cp1251+

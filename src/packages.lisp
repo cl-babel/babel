@@ -45,6 +45,7 @@
    #:enc-bom-encoding
    #:enc-nul-encoding
    #:enc-default-replacement
+   #:encodable-code-point-p
    #:ambiguous-encoding-p
    ;; concrete mappings
    #:instantiate-concrete-mappings
@@ -93,6 +94,8 @@
    #:*default-eol-style*
    ;; general user API
    #:*default-character-encoding*
+   #:encodable-character-p
+   #:encodable-string-p
    #:list-character-encodings
    #:string-to-octets
    #:octets-to-string

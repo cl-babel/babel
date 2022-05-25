@@ -349,5 +349,18 @@ shouldn't attempt to modify V."
       (when maxp (assert (plusp max)))
       (funcall (code-point-counter mapping) vector start end max))))
 
+(defun encodable-string-p (string &key (encoding *default-character-encoding*)
+                                       (start 0)
+                                       (end (length string)))
+  (let ((enc (get-character-encoding encoding)))
+    (loop for i from start below end
+          unless (encodable-code-point-p enc (char-code (char string i)))
+            return (values nil i)
+          finally (return t))))
+
+(defun encodable-character-p (character &key (encoding *default-character-encoding*))
+  (encodable-code-point-p (get-character-encoding encoding)
+                          (char-code character)))
+
 (declaim (notinline octets-to-string string-to-octets string-size-in-octets
                     vector-size-in-chars concatenate-strings-to-octets))

@@ -51,7 +51,8 @@ in 2 to 4 bytes."
   :max-units-per-char 4
   :literal-char-code-limit #x80
   :bom-encoding #(#xef #xbb #xbf)
-  :default-replacement #xfffd)
+  :default-replacement #xfffd
+  :codespace '((#x0 #xFFFFFF)))
 
 (define-condition invalid-utf8-starter-byte (character-decoding-error)
   ()

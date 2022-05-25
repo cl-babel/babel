@@ -41,6 +41,10 @@
     :initarg :code-unit-size :reader enc-code-unit-size :initform 8)
    (max-units-per-char
     :initarg :max-units-per-char :reader enc-max-units-per-char :initform 1)
+   ;; a list of integers or integer pairs (start . end) denoting the Unicode
+   ;; code points that are encodable in this CHARACTER-ENCODING.
+   (codespace
+    :initarg :codespace :reader enc-codespace)
    ;; If NIL, it is necessary to swap 16- and 32-bit units.
    (native-endianness
     :initarg :native-endianness :reader enc-native-endianness :initform t)
@@ -92,6 +96,24 @@ character encoding object."
     (format s "~&~A~%~%" documentation))
   (call-next-method))
 
+(defun encodable-code-point-p (encoding code)
+  (loop for range in (enc-codespace encoding)
+        do (etypecase range
+             (integer
+              (cond ((= range code)
+                     (return t))
+                    ((> range code)
+                     (return nil))))
+             (cons
+              (destructuring-bind (start end &optional table) range
+                (cond ((> start code)
+                       (return nil))
+                      ((<= start code end)
+                       (return
+                         (or (null table)
+                             (and (aref table (- code start)) t))))))))
+        finally (return nil)))
+
 (defvar *supported-character-encodings* nil)
 
 (defun list-character-encodings ()
@@ -106,9 +128,9 @@ encodings.  This list does not include aliases."
 encoding.")
 
 (defun get-character-encoding (name)
-  "Lookups the character encoding denoted by the keyword symbol
-NAME.  Signals an error if one is not found.  If NAME is already
-a CHARACTER-ENCONDING object, it is returned unmodified."
+  "Finds the character encoding denoted by the keyword symbol NAME.  Signals an
+error if one is not found.  If NAME is already a CHARACTER-ENCONDING object, it
+is returned unmodified."
   (when (typep name 'character-encoding)
     (return-from get-character-encoding name))
   (when (eq name :default)
