@@ -1,6 +1,6 @@
 ;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; enc-ebcdic.lisp --- EBCDIC encodings.
+;;; enc-ebcdic.lisp --- Localized EBCDIC variant encodings.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;; Copyright (C) 2020, Timo Myyrä  <timo.myyra@bittivirhe.fi>
@@ -35,11 +35,11 @@
     "An alleged character set used on IBM dinosaurs using Euro sign."
   :aliases '(:ibm-1140))
 
-(define-character-encoding :ebcdic-278
+(define-character-encoding :ebcdic-fi
     "A character set used on IBM mainframes in Finland/Sweden."
   :aliases '(:ibm-278))
 
-(define-character-encoding :ebcdic-1143
+(define-character-encoding :ebcdic-fi-euro
     "A character set used on IBM mainframes in Finland/Sweden using Euro sign."
   :aliases '(:ibm-1143))
 
@@ -95,7 +95,7 @@
       #x20ac
       (aref +ebcdic-decode-table+ octet)))
 
-(defun ebcdic-278-encoder (code)
+(defun ebcdic-fi-encoder (code)
   (if (>= code 256)
       (handle-error)
       (or (case code
@@ -128,7 +128,7 @@
             (#x40 #xec))
           (aref +ebcdic-encode-table+ code))))
 
-(defun ebcdic-278-decoder (octet)
+(defun ebcdic-fi-decoder (octet)
   (or (case octet
         (#x43 #x7b)
         (#x47 #x7d)
@@ -159,18 +159,18 @@
         (#xec #x40))
       (aref +ebcdic-decode-table+ octet)))
 
-(define-unibyte-encoder :ebcdic-278 (code)
-  (ebcdic-278-encoder code))
+(define-unibyte-encoder :ebcdic-fi (code)
+  (ebcdic-fi-encoder code))
 
-(define-unibyte-decoder :ebcdic-278 (octet)
-  (ebcdic-278-decoder octet))
+(define-unibyte-decoder :ebcdic-fi (octet)
+  (ebcdic-fi-decoder octet))
 
-(define-unibyte-encoder :ebcdic-1143 (code)
+(define-unibyte-encoder :ebcdic-fi-euro (code)
   (if (= code #x20ac)
       #x5a
-      (ebcdic-278-encoder code)))
+      (ebcdic-fi-encoder code)))
 
-(define-unibyte-decoder :ebcdic-1143 (octet)
+(define-unibyte-decoder :ebcdic-fi-euro (octet)
   (if (= octet #x5a)
       #x20ac
-      (ebcdic-278-decoder octet)))
+      (ebcdic-fi-decoder octet)))
