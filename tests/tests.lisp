@@ -274,7 +274,7 @@ RESULT defaults to `*last-test-result*' and STREAM defaults to t"
                  (string-size-in-octets foo-string :errorp t)))))))
 
 (deftest iconv-test ()
-  (dolist (enc '(:ascii :ebcdic-us :utf-8 :utf-16 :utf-32))
+  (dolist (enc '(:ascii :ebcdic-us :ebcdic-fi :utf-8 :utf-16 :utf-32))
     (case enc
       (:utf-16 (test-encoding :utf-16 "utf-16-with-le-bom"))
       (:utf-32 (test-encoding :utf-32 "utf-32-with-le-bom")))
@@ -910,3 +910,18 @@ RESULT defaults to `*last-test-result*' and STREAM defaults to t"
 #+enable-slow-babel-tests
 (deftest octet-sweep-all-encodings ()
   (mapc #'octet-sweep (list-character-encodings)))
+
+;; Test currency sign on localized ebcdic encodings
+(deftest ebcdic-fi-diaeresis-and-euro ()
+  (let ((utf8-diaeresis-string "ÄäöÖ")
+        (utf8-euro-string "€")
+        (ebcdic-diaeresis-expected (make-array 4 :element-type '(unsigned-byte 8)
+                                                 :initial-contents '(#x7b #xc0 #x6a #x7c)))
+        (ebcdic-euro-expected (make-array 1 :element-type '(unsigned-byte 8)
+                                            :initial-contents '(#x5a))))
+    (is (equalp (babel:octets-to-string ebcdic-diaeresis-expected :encoding :ebcdic-fi)
+                utf8-diaeresis-string))
+    (is (equalp (babel:octets-to-string ebcdic-diaeresis-expected :encoding :ebcdic-fi-euro)
+                utf8-diaeresis-string))
+    (is (equalp (babel:octets-to-string ebcdic-euro-expected :encoding :ebcdic-fi-euro)
+                utf8-euro-string))))

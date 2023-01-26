@@ -1,8 +1,9 @@
 ;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; enc-ebcdic.lisp --- EBCDIC encodings.
+;;; enc-ebcdic.lisp --- Localized EBCDIC variant encodings.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
+;;; Copyright (C) 2020, Timo Myyrä  <timo.myyra@bittivirhe.fi>
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person
 ;;; obtaining a copy of this software and associated documentation
@@ -29,6 +30,18 @@
 (define-character-encoding :ebcdic-us
     "An alleged character set used on IBM dinosaurs."
   :aliases '(:ibm-037))
+
+(define-character-encoding :ebcdic-us-euro
+    "An alleged character set used on IBM dinosaurs using Euro sign."
+  :aliases '(:ibm-1140))
+
+(define-character-encoding :ebcdic-fi
+    "A character set used on IBM mainframes in Finland/Sweden."
+  :aliases '(:ibm-278))
+
+(define-character-encoding :ebcdic-fi-euro
+    "A character set used on IBM mainframes in Finland/Sweden using Euro sign."
+  :aliases '(:ibm-1143))
 
 (define-constant +ebcdic-decode-table+
   (make-array
@@ -69,3 +82,95 @@
 
 (define-unibyte-decoder :ebcdic-us (octet)
   (aref +ebcdic-decode-table+ octet))
+
+(define-unibyte-encoder :ebcdic-us-euro (code)
+  (if (>= code 256)
+      (handle-error)
+      (if (= code #x20ac)
+          #x9f
+          (aref +ebcdic-encode-table+ code))))
+
+(define-unibyte-decoder :ebcdic-us-euro (octet)
+  (if (= octet #x9f)
+      #x20ac
+      (aref +ebcdic-decode-table+ octet)))
+
+(defun ebcdic-fi-encoder (code)
+  (if (>= code 256)
+      (handle-error)
+      (or (case code
+            (#x7b #x43)
+            (#x7d #x47)
+            (#xa7 #x4a)
+            (#x21 #x4f)
+            (#x60 #x51)
+            (#xa4 #x5a)
+            (#xc5 #x5b)
+            (#x5e #x5f)
+            (#x23 #x63)
+            (#x24 #x67)
+            (#xf6 #x6a)
+            (#x5c #x71)
+            (#xe9 #x79)
+            (#xc4 #x7b)
+            (#xd6 #x7c)
+            (#x5d #x9f)
+            (#xfc #xa1)
+            (#xa2 #xb0)
+            (#x5b #xb5)
+            (#xac #xba)
+            (#x7c #xbb)
+            (#xe4 #xc0)
+            (#xa6 #xcc)
+            (#xe5 #xd0)
+            (#x7e #xdc)
+            (#xc9 #xe0)
+            (#x40 #xec))
+          (aref +ebcdic-encode-table+ code))))
+
+(defun ebcdic-fi-decoder (octet)
+  (or (case octet
+        (#x43 #x7b)
+        (#x47 #x7d)
+        (#x4a #xa7)
+        (#x4f #x21)
+        (#x51 #x60)
+        (#x5a #xa4)
+        (#x5b #xc5)
+        (#x5f #x5e)
+        (#x63 #x23)
+        (#x67 #x24)
+        (#x6a #xf6)
+        (#x71 #x5c)
+        (#x79 #xe9)
+        (#x7b #xc4)
+        (#x7c #xd6)
+        (#x9f #x5d)
+        (#xa1 #xfc)
+        (#xb0 #xa2)
+        (#xb5 #x5b)
+        (#xba #xac)
+        (#xbb #x7c)
+        (#xc0 #xe4)
+        (#xcc #xa6)
+        (#xd0 #xe5)
+        (#xdc #x7e)
+        (#xe0 #xc9)
+        (#xec #x40))
+      (aref +ebcdic-decode-table+ octet)))
+
+(define-unibyte-encoder :ebcdic-fi (code)
+  (ebcdic-fi-encoder code))
+
+(define-unibyte-decoder :ebcdic-fi (octet)
+  (ebcdic-fi-decoder octet))
+
+(define-unibyte-encoder :ebcdic-fi-euro (code)
+  (if (= code #x20ac)
+      #x5a
+      (ebcdic-fi-encoder code)))
+
+(define-unibyte-decoder :ebcdic-fi-euro (octet)
+  (if (= octet #x5a)
+      #x20ac
+      (ebcdic-fi-decoder octet)))
