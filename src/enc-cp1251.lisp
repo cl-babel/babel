@@ -59,15 +59,15 @@
       (svref +cp1251-to-unicode+ (the ub8 (- octet #x80)))))
 
 (define-constant +unicode-a0-bf-to-cp1251+
-    #(#xa0 #x00 #x00 #x00 #xa4 #x00 #xa6 #xa7  ; #xa0-#xa7
-      #x00 #xa9 #x00 #xab #xac #xad #xae #x00  ; #xa8-#xaf
-      #xb0 #xb1 #x00 #x00 #x00 #xb5 #xb6 #xb7  ; #xb0-#xb7
-      #x00 #x00 #x00 #xbb #x00 #x00 #x00 #x00) ; #xb8-#xbf
+    #(#xa0  nil  nil  nil #xa4  nil #xa6 #xa7  ; #xa0-#xa7
+       nil #xa9  nil #xab #xac #xad #xae  nil  ; #xa8-#xaf
+      #xb0 #xb1  nil  nil  nil #xb5 #xb6 #xb7  ; #xb0-#xb7
+       nil  nil  nil #xbb  nil  nil  nil  nil) ; #xb8-#xbf
   :test #'equalp)
 
 (define-constant +unicode-0-97-to-cp1251+
-    #(#x00 #xa8 #x80 #x81 #xaa #xbd #xb2 #xaf  ; #x00-#x07
-      #xa3 #x8a #x8c #x8e #x8d #x00 #xa1 #x8f  ; #x08-#x0f
+    #( nil #xa8 #x80 #x81 #xaa #xbd #xb2 #xaf  ; #x00-#x07
+      #xa3 #x8a #x8c #x8e #x8d  nil #xa1 #x8f  ; #x08-#x0f
       #xc0 #xc1 #xc2 #xc3 #xc4 #xc5 #xc6 #xc7  ; #x10-#x17
       #xc8 #xc9 #xca #xcb #xcc #xcd #xce #xcf  ; #x18-#x1f
       #xd0 #xd1 #xd2 #xd3 #xd4 #xd5 #xd6 #xd7  ; #x20-#x27
@@ -76,24 +76,24 @@
       #xe8 #xe9 #xea #xeb #xec #xed #xee #xef  ; #x38-#x3f
       #xf0 #xf1 #xf2 #xf3 #xf4 #xf5 #xf6 #xf7  ; #x40-#x47
       #xf8 #xf9 #xfa #xfb #xfc #xfd #xfe #xff  ; #x48-#x4f
-      #x00 #xb8 #x90 #x83 #xba #xbe #xb3 #xbf  ; #x50-#x57
-      #xbc #x9a #x9c #x9e #x9d #x00 #xa2 #x9f  ; #x58-#x5f
-      #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00  ; #x60-#x67
-      #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00  ; #x68-#x6f
-      #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00  ; #x70-#x77
-      #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00  ; #x78-#x7f
-      #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00  ; #x80-#x87
-      #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00  ; #x88-#x8f
-      #xa5 #xb4 #x00 #x00 #x00 #x00 #x00 #x00) ; #x90-#x97
+       nil #xb8 #x90 #x83 #xba #xbe #xb3 #xbf  ; #x50-#x57
+      #xbc #x9a #x9c #x9e #x9d  nil #xa2 #x9f  ; #x58-#x5f
+       nil  nil  nil  nil  nil  nil  nil  nil  ; #x60-#x67
+       nil  nil  nil  nil  nil  nil  nil  nil  ; #x68-#x6f
+       nil  nil  nil  nil  nil  nil  nil  nil  ; #x70-#x77
+       nil  nil  nil  nil  nil  nil  nil  nil  ; #x78-#x7f
+       nil  nil  nil  nil  nil  nil  nil  nil  ; #x80-#x87
+       nil  nil  nil  nil  nil  nil  nil  nil  ; #x88-#x8f
+      #xa5 #xb4  nil  nil  nil  nil  nil  nil) ; #x90-#x97
   :test #'equalp)
 
 (define-constant +unicode-10-3f-to-cp1251+
-    #(#x00 #x00 #x00 #x96 #x97 #x00 #x00 #x00  ; #x10-#x17
-      #x91 #x92 #x82 #x00 #x93 #x94 #x84 #x00  ; #x18-#x1f
-      #x86 #x87 #x95 #x00 #x00 #x00 #x85 #x00  ; #x20-#x27
-      #x00 #x00 #x00 #x00 #x00 #x00 #x00 #x00  ; #x28-#x2f
-      #x89 #x00 #x00 #x00 #x00 #x00 #x00 #x00  ; #x30-#x37
-      #x00 #x8b #x9b #x00 #x00 #x00 #x00 #x00) ; #x38-#x3f
+    #( nil  nil  nil #x96 #x97  nil  nil  nil  ; #x10-#x17
+      #x91 #x92 #x82  nil #x93 #x94 #x84  nil  ; #x18-#x1f
+      #x86 #x87 #x95  nil  nil  nil #x85  nil  ; #x20-#x27
+       nil  nil  nil  nil  nil  nil  nil  nil  ; #x28-#x2f
+      #x89  nil  nil  nil  nil  nil  nil  nil  ; #x30-#x37
+       nil #x8b #x9b  nil  nil  nil  nil  nil) ; #x38-#x3f
   :test #'equalp)
 
 (define-character-encoding :cp1251
@@ -109,15 +109,15 @@
 (define-unibyte-encoder :cp1251 (code)
   (cond
     ((< code #x80) code)
-    ((and (>= code #xa0) (< code #xc0))
-     (svref  +unicode-a0-bf-to-cp1251+
-            (the ub8 (- code #xa0))))
-    ((and (>= code #x400) (< code #x498))
-     (svref +unicode-0-97-to-cp1251+
-            (the ub8 (- code #x400))))
-    ((and (>= code #x2010) (< code #x2040))
-     (svref +unicode-10-3f-to-cp1251+
-            (the ub8 (- code #x2010))))
+    ((<= #xa0 code #xbf)
+     (or (svref +unicode-a0-bf-to-cp1251+ (the ub8 (- code #xa0)))
+         (handle-error)))
+    ((<= #x400 code #x497)
+     (or (svref +unicode-0-97-to-cp1251+ (the ub8 (- code #x400)))
+         (handle-error)))
+    ((<= #x2010 code #x203f)
+     (or (svref +unicode-10-3f-to-cp1251+ (the ub8 (- code #x2010)))
+         (handle-error)))
     ((= code #x20ac) #x88)
     ((= code #x2116) #xb9)
     ((= code #x2122) #x99)
