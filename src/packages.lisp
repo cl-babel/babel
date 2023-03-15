@@ -37,6 +37,7 @@
    #:enc-name
    #:enc-aliases
    #:enc-code-unit-size
+   #:enc-codespace
    #:enc-max-units-per-char
    #:enc-native-endianness
    #:enc-decode-literal-code-unit-limit

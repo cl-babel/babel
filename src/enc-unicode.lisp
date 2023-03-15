@@ -52,7 +52,7 @@ in 2 to 4 bytes."
   :literal-char-code-limit #x80
   :bom-encoding #(#xef #xbb #xbf)
   :default-replacement #xfffd
-  :codespace '((#x0 #xFFFFFF)))
+  :codespace '((0 #x10ffff)))
 
 (define-condition invalid-utf8-starter-byte (character-decoding-error)
   ()
@@ -315,6 +315,7 @@ code points for each invalid byte."
   :max-units-per-char 4
   :literal-char-code-limit #x80
   :bom-encoding #(#xef #xbb #xbf)
+  :codespace '((0 #x10ffff))
   :default-replacement nil)
 
 ;;; TODO: reuse the :UTF-8 octet counter through a simple macro.
@@ -652,6 +653,7 @@ written in native byte-order with a leading byte-order mark."
   :bom-encoding #+big-endian #(#xfe #xff) #+little-endian #(#xff #xfe)
   :nul-encoding #(0 0)
   :default-replacement #xfffd
+  :codespace '((0 #x10ffff))
   :ambiguous #+little-endian t #+big-endian nil)
 
 (define-utf-16 :utf-16)
@@ -669,6 +671,7 @@ written in little-endian byte-order without a leading byte-order mark."
   :decode-literal-code-unit-limit #xd800
   :encode-literal-code-unit-limit #x10000
   :nul-encoding #(0 0)
+  :codespace '((0 #x10ffff))
   :default-replacement #xfffd)
 
 (define-utf-16 :utf-16le :le)
@@ -686,6 +689,7 @@ written in big-endian byte-order without a leading byte-order mark."
   :decode-literal-code-unit-limit #xd800
   :encode-literal-code-unit-limit #x10000
   :nul-encoding #(0 0)
+  :codespace '((0 #x10ffff))
   :default-replacement #xfffd)
 
 (define-utf-16 :utf-16be :be)
@@ -797,6 +801,7 @@ order with a leading byte-order mark."
   #+big-endian #(#x00 #x00 #xfe #xff)
   #+little-endian #(#xff #xfe #x00 #x00)
   :nul-encoding #(0 0 0 0)
+  :codespace '((0 #x10ffff))
   :ambiguous #+little-endian t #+big-endian nil)
 
 (define-ucs :utf-32 4)
@@ -811,6 +816,7 @@ order without a leading byte-order mark."
   :aliases '(:utf-32/le :ucs-4le :ucs-4/le)
   :native-endianness #+little-endian t #+big-endian nil
   :literal-char-code-limit #x110000
+  :codespace '((0 #x10ffff))
   :nul-encoding #(0 0 0 0))
 
 (define-ucs :utf-32le 4 :le)
@@ -825,6 +831,7 @@ order without a leading byte-order mark."
   :aliases '(:utf-32/be :ucs-4be :ucs-4/be)
   :native-endianness #+little-endian nil #+big-endian t
   :literal-char-code-limit #x110000
+  :codespace '((0 #x10ffff))
   :nul-encoding #(0 0 0 0))
 
 (define-ucs :utf-32be 4 :be)
@@ -849,6 +856,7 @@ order with a leading byte-order mark."
   #+big-endian #(#xfe #xff)
   #+little-endian #(#xff #xfe)
   :nul-encoding #(0 0)
+  :codespace '((0 #x10ffff))
   :ambiguous #+little-endian t #+big-endian nil)
 
 (define-ucs :ucs-2 2 nil #x10000)
@@ -863,6 +871,7 @@ order without a leading byte-order mark."
   :aliases '(:ucs-2/le)
   :native-endianness #+little-endian t #+big-endian nil
   :literal-char-code-limit #x10000
+  :codespace '((0 #x10ffff))
   :nul-encoding #(0 0))
 
 (define-ucs :ucs-2le 2 :le #x10000)
@@ -877,6 +886,7 @@ order without a leading byte-order mark."
   :aliases '(:ucs-2/be)
   :native-endianness #+little-endian nil #+big-endian t
   :literal-char-code-limit #x10000
+  :codespace '((0 #x10ffff))
   :nul-encoding #(0 0))
 
 (define-ucs :ucs-2be 2 :be #x10000)
