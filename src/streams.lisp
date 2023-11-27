@@ -99,7 +99,8 @@
 (defmethod stream-element-type ((self in-memory-stream))
   ;; stream-element-type is a CL symbol, we may not install an accessor on it.
   ;; so, go through this extra step.
-  (element-type-of self))
+  (let ((element-type (element-type-of self)))
+    (if (eq element-type :default) '(unsigned-byte 8) element-type)))
 
 (defun stream-accepts-octets? (stream)
   (let ((element-type (element-type-of stream)))
@@ -389,7 +390,7 @@ AS-LIST is true the return value is coerced to a list."
           (string (octets-to-string vector :encoding (external-format-of stream)))
           (list (coerce vector 'list)))
       (setf (vector-stream-vector stream)
-	    (make-vector-stream-buffer :element-type (element-type-of stream))))))
+	    (make-vector-stream-buffer :element-type (stream-element-type stream))))))
 
 (defmacro with-output-to-sequence
     ((var &key (return-as ''vector) (element-type '':default)
