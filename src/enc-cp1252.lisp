@@ -65,14 +65,14 @@
 (define-unibyte-encoder :cp1252 (code)
   (cond
     ((or (< code #x80)
-         (and (> code #xa0) (<= code #xff)))
+         (and (>= code #xa0) (<= code #xff)))
      code)
     ((and (>= code #x0152) (<= code #x017e))
      (svref +unicode-0152-017e-cp1252+
             (the ub8 (- code #x0152))))
     ((= code #x0192) #x83)
     ((= code #x02c6) #x88)
-    ((= code #x02dc) #x89)
+    ((= code #x02dc) #x98)
     ((and (>= code #x2013) (<= code #x203a))
      (svref +unicode-2013-203a-cp1252+
             (the ub8 (- code #x2013))))
