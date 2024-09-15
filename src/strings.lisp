@@ -129,6 +129,11 @@ are less than UNICODE-CHAR-CODE-LIMIT."
    :code-point-seq-getter string-get
    :code-point-seq-type simple-base-string))
 
+(declaim (inline find-string-mapping))
+(defun find-string-mapping (encoding)
+  "Find the mapping for an encoding and a simple-unicode-string."
+  (lookup-mapping *string-vector-mappings* encoding))
+
 ;;; Do we want a more a specific error condition here?
 (defun check-vector-bounds (vector start end)
   (unless (<= 0 start end (length vector))
@@ -225,7 +230,7 @@ shouldn't attempt to modify V."
   (with-checked-simple-vector ((vector vector) (start start) (end end))
     (declare (type (simple-array (unsigned-byte 8) (*)) vector))
     (let ((*suppress-character-coding-errors* (not errorp))
-          (mapping (lookup-mapping *string-vector-mappings* encoding)))
+          (mapping (find-string-mapping encoding)))
       (multiple-value-bind (size new-end)
           (funcall (code-point-counter mapping) vector start end -1)
         ;; TODO we could optimize ASCII here: the result should
@@ -286,7 +291,7 @@ shouldn't attempt to modify V."
        (with-checked-simple-vector ((string (coerce string 'unicode-string))
                                     (start start) (end end))
          (declare (type simple-unicode-string string))
-         (let* ((mapping (lookup-mapping *string-vector-mappings* encoding))
+         (let* ((mapping (find-string-mapping encoding))
                 (bom (bom-vector encoding use-bom))
                 (bom-length (length bom))
                 (result (make-array
