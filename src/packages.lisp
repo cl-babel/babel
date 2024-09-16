@@ -69,7 +69,9 @@
    #:character-out-of-range
    #:invalid-utf8-starter-byte
    #:invalid-utf8-continuation-byte
-   #:overlong-utf8-sequence))
+   #:overlong-utf8-sequence
+   ;; restart
+   #:retry-code))
 
 (defpackage #:babel
   (:use #:common-lisp #:babel-encodings #:alexandria)
@@ -112,4 +114,6 @@
    #:character-out-of-range
    #:invalid-utf8-starter-byte
    #:invalid-utf8-continuation-byte
-   #:overlong-utf8-sequence))
+   #:overlong-utf8-sequence
+   ;; restart
+   #:retry-code))
