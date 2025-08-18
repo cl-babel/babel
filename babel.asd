@@ -44,6 +44,7 @@
      (:file "enc-cp1250")
      (:file "enc-cp1251")
      (:file "enc-cp1252")
+     (:file "enc-cp1254")
      (:file "jpn-table")
      (:file "enc-jpn")
      (:file "enc-gbk")
