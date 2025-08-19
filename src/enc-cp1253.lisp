@@ -67,6 +67,6 @@ Greek."
       :finally (return h)))
 
 (define-unibyte-encoder :cp1253 (code)
-  (if (< code #x80)
-      code
-      (gethash code +unicode-to-cp1253+ (handle-error))))
+  (cond ((< code #x80) code)
+        ((gethash code +unicode-to-cp1253+))
+        (t  (handle-error))))
