@@ -33,22 +33,22 @@ Greek."
   :literal-char-code-limit 256)
 
 (define-constant +cp1253-to-unicode+
-    #(#x20AC #x0000 #x201A #x0192 #x201E #x2026 #x2020 #x2021
-      #x0000 #x2030 #x0000 #x2039 #x0000 #x0000 #x0000 #x0000
-      #x0000 #x2018 #x2019 #x201C #x201D #x2022 #x2013 #x2014
-      #x0000 #x2122 #x0000 #x203A #x0000 #x0000 #x0000 #x0000
-      #x00A0 #x0385 #x0386 #x00A3 #x00A4 #x00A5 #x00A6 #x00A7
-      #x00A8 #x00A9 #x0000 #x00AB #x00AC #x00AD #x00AE #x2015
-      #x00B0 #x00B1 #x00B2 #x00B3 #x0384 #x00B5 #x00B6 #x00B7
-      #x0388 #x0389 #x038A #x00BB #x038C #x00BD #x038E #x038F
+    #(#x20ac #xfffd #x201a #x0192 #x201e #x2026 #x2020 #x2021
+      #xfffd #x2030 #xfffd #x2039 #xfffd #xfffd #xfffd #xfffd
+      #xfffd #x2018 #x2019 #x201c #x201d #x2022 #x2013 #x2014
+      #xfffd #x2122 #xfffd #x203a #xfffd #xfffd #xfffd #xfffd
+      #x00a0 #x0385 #x0386 #x00a3 #x00a4 #x00a5 #x00a6 #x00a7
+      #x00a8 #x00a9 #xfffd #x00ab #x00ac #x00ad #x00ae #x2015
+      #x00b0 #x00b1 #x00b2 #x00b3 #x0384 #x00b5 #x00b6 #x00b7
+      #x0388 #x0389 #x038a #x00bb #x038c #x00bd #x038e #x038f
       #x0390 #x0391 #x0392 #x0393 #x0394 #x0395 #x0396 #x0397
-      #x0398 #x0399 #x039A #x039B #x039C #x039D #x039E #x039F
-      #x03A0 #x03A1 #x0000 #x03A3 #x03A4 #x03A5 #x03A6 #x03A7
-      #x03A8 #x03A9 #x03AA #x03AB #x03AC #x03AD #x03AE #x03AF
-      #x03B0 #x03B1 #x03B2 #x03B3 #x03B4 #x03B5 #x03B6 #x03B7
-      #x03B8 #x03B9 #x03BA #x03BB #x03BC #x03BD #x03BE #x03BF
-      #x03C0 #x03C1 #x03C2 #x03C3 #x03C4 #x03C5 #x03C6 #x03C7
-      #x03C8 #x03C9 #x03CA #x03CB #x03CC #x03CD #x03CE #x0000)
+      #x0398 #x0399 #x039a #x039b #x039c #x039d #x039e #x039f
+      #x03a0 #x03a1 #xfffd #x03a3 #x03a4 #x03a5 #x03a6 #x03a7
+      #x03a8 #x03a9 #x03aa #x03ab #x03ac #x03ad #x03ae #x03af
+      #x03b0 #x03b1 #x03b2 #x03b3 #x03b4 #x03b5 #x03b6 #x03b7
+      #x03b8 #x03b9 #x03ba #x03bb #x03bc #x03bd #x03be #x03bf
+      #x03c0 #x03c1 #x03c2 #x03c3 #x03c4 #x03c5 #x03c6 #x03c7
+      #x03c8 #x03c9 #x03ca #x03cb #x03cc #x03cd #x03ce #xfffd)
   :test #'equalp)
 
 (define-unibyte-decoder :cp1253 (octet)
@@ -62,11 +62,11 @@ Greek."
       :with h := (make-hash-table)
       :for code :from #x80
       :for unicode :across +cp1253-to-unicode+
-      :when unicode
+      :unless (= unicode #xfffd)
         :do (setf (gethash unicode h) code)
       :finally (return h)))
 
 (define-unibyte-encoder :cp1253 (code)
   (if (< code #x80)
       code
-      (gethash code +unicode-to-cp1253+ #x00)))
+      (gethash code +unicode-to-cp1253+ (handle-error))))
