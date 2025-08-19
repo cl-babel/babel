@@ -388,10 +388,16 @@ RESULT defaults to `*last-test-result*' and STREAM defaults to t"
     :iso-8859-7 :iso-8859-8 :iso-8859-9 :iso-8859-10 :iso-8859-11 :iso-8859-13
     :iso-8859-14 :iso-8859-15 :iso-8859-16))
 
+(defparameter *cp12xx-encodings*
+  '(:cp1250))
+
 ;;; Don't actually see what comes out, but there shouldn't be any
 ;;; errors.
 (deftest iso-8859-roundtrip-no-checking ()
   (loop for enc in *iso-8859-charsets* do (test-8bit-roundtrip enc)))
+
+(deftest cp12xx-roundtrip-no-checking ()
+  (loop :for enc :in *cp12xx-encodings* :do (test-8bit-roundtrip enc)))
 
 (deftest ensure-roundtrip-latin ()
   (loop for enc in '(:latin1 :latin9) do (test-8bit-roundtrip enc)))
