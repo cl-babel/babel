@@ -26,12 +26,6 @@
 
 (in-package #:babel-encodings)
 
-(define-character-encoding :cp1250
-    "An 8-bit, fixed-width character encoding used by Windows for Central
-     European languages, including Czech, Polish, Slovak, Hungarian, and others."
-  :aliases '(:windows-1250)
-  :literal-char-code-limit 256)
-
 (define-constant +cp1250-to-unicode+
    #(#x20ac #xfffd #x201a #xfffd #x201e #x2026 #x2020 #x2021
      #xfffd #x2030 #x0160 #x2039 #x015a #x0164 #x017d #x0179
@@ -70,3 +64,11 @@
   (cond ((< code #x80) code)
         ((gethash code +unicode-to-cp1250+))
         (t (handle-error))))
+
+(define-character-encoding :cp1250
+    "An 8-bit, fixed-width character encoding used by Windows for Central
+     European languages, including Czech, Polish, Slovak, Hungarian, and others."
+  :aliases '(:windows-1250)
+  :literal-char-code-limit 256
+  :codespace `((#x00 #x80)
+               ,@(hash-table-keys +unicode-to-cp1250+)))
