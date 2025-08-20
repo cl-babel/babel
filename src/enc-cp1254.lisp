@@ -26,11 +26,6 @@
 
 (in-package #:babel-encodings)
 
-(define-character-encoding :cp1254
-    "An 8-bit, fixed-width character Turkish encoding from Windows."
-  :aliases '(:windows-1254)
-  :literal-char-code-limit 256)
-
 (define-constant +cp1254-to-unicode+
     #(;; #x80
       #x20ac #xfffd #x201a #x0192 #x201e #x2026 #x2020 #x2021
@@ -189,3 +184,10 @@
         (#x015f #xfe)
         (#x00ff #xff)
         (t (handle-error)))))
+
+(define-character-encoding :cp1254
+    "An 8-bit, fixed-width character Turkish encoding from Windows."
+  :aliases '(:windows-1254)
+  :literal-char-code-limit 256
+  :codespace `((#x00 #x80)
+               ,@(remove #xfffd (coerce +cp1254-to-unicode+ 'list))))
