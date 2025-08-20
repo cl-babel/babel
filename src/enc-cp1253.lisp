@@ -26,12 +26,6 @@
 
 (in-package #:babel-encodings)
 
-(define-character-encoding :cp1253
-    "A 8-bit, fixed-width character encoding used by Windows for modern
-Greek."
-  :aliases '(:windows-1253)
-  :literal-char-code-limit 256)
-
 (define-constant +cp1253-to-unicode+
     #(#x20ac #xfffd #x201a #x0192 #x201e #x2026 #x2020 #x2021
       #xfffd #x2030 #xfffd #x2039 #xfffd #xfffd #xfffd #xfffd
@@ -59,14 +53,22 @@ Greek."
 
 (define-constant +unicode-to-cp1253+
     (loop
-      :with h := (make-hash-table)
-      :for code :from #x80
-      :for unicode :across +cp1253-to-unicode+
-      :unless (= unicode #xfffd)
-        :do (setf (gethash unicode h) code)
-      :finally (return h)))
+      with h = (make-hash-table)
+      for code from #x80
+      for unicode across +cp1253-to-unicode+
+      unless (= unicode #xfffd)
+        do (setf (gethash unicode h) code)
+      finally (return h)))
 
 (define-unibyte-encoder :cp1253 (code)
   (cond ((< code #x80) code)
         ((gethash code +unicode-to-cp1253+))
         (t  (handle-error))))
+
+(define-character-encoding :cp1253
+    "A 8-bit, fixed-width character encoding used by Windows for modern
+Greek."
+  :aliases '(:windows-1253)
+  :literal-char-code-limit 256
+  :codespace `((#x00 #x80)
+               ,@(hash-table-keys +unicode-to-cp1253+)))
