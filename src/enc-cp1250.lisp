@@ -71,4 +71,4 @@
   :aliases '(:windows-1250)
   :literal-char-code-limit 256
   :codespace `((#x00 #x80)
-               ,@(hash-table-keys +unicode-to-cp1250+)))
+               ,+unicode-to-cp1250+))

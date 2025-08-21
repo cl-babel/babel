@@ -111,7 +111,9 @@ character encoding object."
                       ((<= start code end)
                        (return
                          (or (null table)
-                             (and (aref table (- code start)) t))))))))
+                             (and (aref table (- code start)) t)))))))
+             (hash-table
+              (return (gethash code range))))
         finally (return nil)))
 
 (defvar *supported-character-encodings* nil)
