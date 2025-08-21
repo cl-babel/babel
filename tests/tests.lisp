@@ -397,7 +397,7 @@ RESULT defaults to `*last-test-result*' and STREAM defaults to t"
   (loop for enc in *iso-8859-charsets* do (test-8bit-roundtrip enc)))
 
 (deftest cp12xx-roundtrip-no-checking ()
-  (loop :for enc :in *cp12xx-encodings* :do (test-8bit-roundtrip enc)))
+  (loop for enc in *cp12xx-encodings* do (test-8bit-roundtrip enc)))
 
 (deftest ensure-roundtrip-latin ()
   (loop for enc in '(:latin1 :latin9) do (test-8bit-roundtrip enc)))
