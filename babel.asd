@@ -43,6 +43,7 @@
      (:file "enc-cp437")
      (:file "enc-cp1251")
      (:file "enc-cp1252")
+     (:file "enc-cp1258")
      (:file "jpn-table")
      (:file "enc-jpn")
      (:file "enc-gbk")
