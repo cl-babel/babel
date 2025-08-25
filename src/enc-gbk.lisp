@@ -39,7 +39,8 @@
     "GBK is an extension of the GB2312 character set for simplified
 Chinese characters, used in the People's Republic of China."
   :max-units-per-char 4
-  :literal-char-code-limit #x80)
+  :literal-char-code-limit #x80
+  :aliases '(:gb2312 :gb18030))
 
 (define-condition invalid-gbk-byte (character-decoding-error)
   ()
