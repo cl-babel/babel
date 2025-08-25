@@ -58,7 +58,8 @@
       for unicode across +cp1250-to-unicode+
       unless (= unicode #xfffd)
         do (setf (gethash unicode h) code)
-      finally (return h)))
+      finally (return h))
+  :test #'equalp)
 
 (define-unibyte-encoder :cp1250 (code)
   (cond ((< code #x80) code)
