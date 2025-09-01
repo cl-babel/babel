@@ -959,3 +959,91 @@ RESULT defaults to `*last-test-result*' and STREAM defaults to t"
                 utf8-diaeresis-string))
     (is (equalp (babel:octets-to-string ebcdic-euro-expected :encoding :ebcdic-fi-euro)
                 utf8-euro-string))))
+
+(deftest test-iso-2022-jp-roundtrip ()
+  ;; 1. ASCII roundtrip
+  (let ((octets (make-ub8-vector 127))
+        (index 0))
+    ;; no escape characters here, since :ascii is default state
+    ;; we need to ignore ascii 27, since ESC is uncodable
+    (dotimes (code 128)
+      (unless (= code 27)
+        (setf (aref octets index) code)
+        (incf index)))
+    
+    (let* ((str (octets-to-string octets :encoding :iso-2022-jp))
+           (oct2 (string-to-octets str :encoding :iso-2022-jp)))
+      (is (eql (length octets) (length oct2)))
+      (is (every #'eql octets oct2))))
+
+  ;; JIS X 0201 roundtrip
+  (let ((octets (make-ub8-vector 68)))
+    ;; first three bytes are escape sequences for JIS X 0201
+    ;; testing roundtrip for JIS X 0201 characters, that are available in ASCII is pointless
+    ;; since encoder will treat them as ASCII and octets will differ
+    ;; only bytes #x5c and #x7e should be tested and bytes that are greater or equal then #xa1
+    (setf (aref octets 0) 27    ; ESC
+          (aref octets 1) 40    ; (
+          (aref octets 2) 74    ; J
+          (aref octets 3) #x5c  ; ¥
+          (aref octets 4) #x7e) ; ‾
+    (do ((index 5 (incf index))
+         (byte #xa1 (incf byte)))
+        ((= byte #xe0))
+      (setf (aref octets index) byte))
+    
+    (let* ((str (octets-to-string octets :encoding :iso-2022-jp))
+           (oct2 (string-to-octets str :encoding :iso-2022-jp)))
+      (is (eql (length octets) (length oct2)))
+      (is (every #'eql octets oct2))))
+  
+  ;; 3. JIS X 0208 roundrip
+  (let ((octets (make-ub8-vector (+ 3 1380 12796))))
+    ;; first three bytes are escape sequences for JIS X 0208
+    ;; only testing one of the available ESC sequence, since roundtrip is impossible for ESC $ @
+    ;; since all JIS X 0208 are encoded with ESC sequence ESC $ B
+    (setf (aref octets 0) 27  ; ESC
+          (aref octets 1) 36  ; $
+          (aref octets 2) 66) ; B
+    (flet ((fill-octets (b1-start b1-end b2-end index-start)
+             (loop
+               with index = index-start
+               with b1 = b1-start
+               with b2 = #x21
+               while (or (< b1 b1-end) (< b2 b2-end))
+               do
+                  (setf (aref octets index) b1)
+                  (setf (aref octets (+ index 1)) b2)
+                  (incf index 2)
+                  (incf b2)
+                  (when (= b2 #x7f)
+                    (incf b1)
+                    (setf b2 #x21)))))
+      (fill-octets #x21 #x28 #x41 3)
+      (fill-octets #x30 #x74 #x27 1383))
+    
+    (let ((str (octets-to-string octets :encoding :iso-2022-jp)))
+      (multiple-value-bind (filtered-str filtered-octets)
+          (let ((s (make-array 0 :element-type 'character
+                                 :adjustable t :fill-pointer 0))
+                (o (make-array 0 :element-type '(unsigned-byte 16)
+                                 :adjustable t :fill-pointer 0)))
+
+            ;; copy first 3 bytes
+            (vector-push-extend (aref octets 0) o)
+            (vector-push-extend (aref octets 1) o)
+            (vector-push-extend (aref octets 2) o)
+
+            (loop for index below (+ 690 6398)
+                  with octet-index = 3
+                  for c = (aref str index)
+                  when (/= (char-code c) #xFFFD)
+                    do (vector-push-extend c s)
+                       (vector-push-extend (aref octets octet-index) o)
+                       (vector-push-extend (aref octets (+ 1 octet-index)) o)
+                  do (incf octet-index 2))
+            (values s o))
+    
+        (let ((oct2 (string-to-octets filtered-str :encoding :iso-2022-jp)))
+          (is (eql (length filtered-octets) (length oct2)))
+          (is (every #'eql filtered-octets oct2)))))))
