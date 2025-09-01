@@ -38,6 +38,8 @@
      (:file "enc-ascii")
      (:file "enc-ebcdic")
      (:file "enc-ebcdic-int")
+     (:file "iso-2022-jp-constants")
+     (:file "enc-iso-2022-jp")
      (:file "enc-iso-8859")
      (:file "enc-unicode")
      (:file "enc-cp437")
