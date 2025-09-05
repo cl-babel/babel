@@ -389,7 +389,7 @@ RESULT defaults to `*last-test-result*' and STREAM defaults to t"
     :iso-8859-14 :iso-8859-15 :iso-8859-16))
 
 (defparameter *cp12xx-encodings*
-  '(:cp1250 :cp1253 :cp1254 :cp1255 :cp1256 :cp1257))
+  '(:cp1250 :cp1253 :cp1254 :cp1255 :cp1256 :cp1257 :cp1258))
 
 ;;; Don't actually see what comes out, but there shouldn't be any
 ;;; errors.
