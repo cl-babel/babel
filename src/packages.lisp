@@ -85,6 +85,8 @@
    ;; fixed sharp-backslash reader
    #:enable-sharp-backslash-syntax
    #:set-sharp-backslash-syntax-in-readtable
+   ;; mappings
+   #:find-string-mapping
    ;; external formats
    #:external-format
    #:make-external-format
